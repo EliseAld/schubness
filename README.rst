@@ -2,6 +2,8 @@
 Hubness_sc
 ====
 
+|Code Style|
+
 Hubness on single-cell RNA sequencing data
 
 Previous steps
