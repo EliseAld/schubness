@@ -2,14 +2,11 @@
 Hubness_sc
 ====
 
-|Code Style|
-
 Hubness on single-cell RNA sequencing data
 
 Previous steps
 -----------
-1. Compute the hubness scores for different dimensions of input space (PCA with various number of PCs, initial space), using the data of * `Guo et al., 2018`__
-.. __: https://www.ncbi.nlm.nih.gov/pubmed/29942094
+1. Compute the hubness scores for different dimensions of input space (PCA with various number of PCs, initial space), using the data of Guo et al., 2018 (<https://www.ncbi.nlm.nih.gov/pubmed/29942094>)
 
 2. Demonstrate the progressive appearance of hubs with increasing dimensions
 
