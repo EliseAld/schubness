@@ -25,6 +25,7 @@ Current steps
 :white_check_mark:
 
 3. Try other methods to compare the distributions (max, nb of hubs, hubs taken as having a nb of k-occurences >= 2k [1], skewness [1], etc)
+:white_check_mark:
 
 4. Try other type of data (10X, ATAC, etc)
 
