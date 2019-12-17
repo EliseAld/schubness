@@ -26,3 +26,7 @@ Current steps
 5. Check the transcriptome of "normal cells" vs "hubs"
 
 4. Check the literature for usage of hubness in sc data
+
+Bibliography
+-----------
+https://www.sciencedirect.com/science/article/pii/S0925231215004336
