@@ -15,7 +15,7 @@ Previous steps
 
 Current steps
 -----------
-1. Increase the ranke of the k-parameter (number of neighbors), and the range of PCA-space dimensions
+1. Increase the rank of the k-parameter (number of neighbors, from 5 to 200), and the range of PCA-space dimensions (from 2 to 9k)  :white_check_mark:
 
 2. Re compute the PCA-transformed matrix
 
