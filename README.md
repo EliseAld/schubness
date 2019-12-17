@@ -24,3 +24,5 @@ Current steps
 4. Try other type of data (10X, ATAC, etc)
 
 5. Check the transcriptome of "normal cells" vs "hubs"
+
+4. Check the literature for usage of hubness in sc data
