@@ -19,7 +19,7 @@ Current steps
 
 2. Re compute the PCA-transformed matrix
 
-3. Try other methods to compare the distributions (max, nb of hubs, hubs taken as having a nb of k-occurences above 2k [1], etc)
+3. Try other methods to compare the distributions (max, nb of hubs, hubs taken as having a nb of k-occurences >= 2k [1], skewness [1], etc)
 
 4. Try other type of data (10X, ATAC, etc)
 
