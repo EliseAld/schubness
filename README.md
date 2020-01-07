@@ -32,7 +32,9 @@ Current steps
 5. Check the transcriptome of "normal cells" vs "hubs" and "anti-hubs"
 
 4. Check the literature for usage of hubness in sc data
+:white_check_mark:
 
 Bibliography
 -----------
 [1] https://www.sciencedirect.com/science/article/pii/S0925231215004336
+[2] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6284580/
