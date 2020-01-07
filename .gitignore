@@ -2,4 +2,4 @@
 *.pdf
 *.txt
 *.pickle
-*.ipynb
+.ipynb_checkpoints
