@@ -1,7 +1,7 @@
 JB
 ---------
 - Smoothing (geosketch, magic, mini batch and others)
-- Synthetic data
+- Synthetic data (https://www.biorxiv.org/content/10.1101/713412v1.full.pdf+html Fig1)
 - Hubness in PCA/tSNE/UMAP space
 - Separability
 - Quasi uniform distribution for hubness calibration
