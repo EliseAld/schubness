@@ -81,14 +81,16 @@ h200_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/R
 ```
 
 ```{r functions}
-get_max <- function(df, dim) {
+get_max <- function(df, dim, ymin, ymax) {
   max=data.frame("k"=c(5,10,20,50,100,200),
                  "max"=c(max(df$Hubness_score[df$k==5 & df$Dimension==dim]),
                          max(df$Hubness_score[df$k==10 & df$Dimension==dim]),
                          max(df$Hubness_score[df$k==20 & df$Dimension==dim]),
                          max(df$Hubness_score[df$k==50 & df$Dimension==dim]),
                          max(df$Hubness_score[df$k==100 & df$Dimension==dim]),
-                         max(df$Hubness_score[df$k==200 & df$Dimension==dim])))
+                         max(df$Hubness_score[df$k==200 & df$Dimension==dim])),
+                 "ymin"=ymin,
+                 "ymax"=ymax)
   return(max)
 }
 ```
@@ -97,6 +99,7 @@ get_max <- function(df, dim) {
 # First letter = pvalue
 # Second letter = kvalue
 # Third letter = dim value
+# ----
 aa_1 <- data.frame("Hubness_score" = h5_2[[1]])
 aa_2 <- data.frame("Hubness_score" = h5_5[[1]])
 aa_3 <- data.frame("Hubness_score" = h5_10[[1]])
@@ -259,6 +262,7 @@ af_6$Dimension <- "500"
 af_7$Dimension <- "1000"
 af_8$Dimension <- "5000"
 af_9$Dimension <- "9047"
+# ----
 hubness <- rbind(aa_1,aa_2,aa_3,aa_4,aa_5,aa_6,aa_7,aa_8,aa_9,
                  ab_1,ab_2,ab_3,ab_4,ab_5,ab_6,ab_7,ab_8,ab_9,
                  ac_1,ac_2,ac_3,ac_4,ac_5,ac_6,ac_7,ac_8,ac_9,
@@ -278,24 +282,24 @@ hubness <- hubness[hubness$Hubness_score != 0,]
 hubness_log <- hubness
 hubness_log$Hubness_score <- log(hubness_log$Hubness_score)
 # Viz
-max_9047 <- get_max(hubness,"9047")
-max_5000 <- get_max(hubness,"5000")
-max_1000 <- get_max(hubness,"1000")
-max_500 <- get_max(hubness,"500")
-max_100 <- get_max(hubness,"100")
-max_50 <- get_max(hubness,"50")
-max_10 <- get_max(hubness,"10")
-max_5 <- get_max(hubness,"5")
-max_2 <- get_max(hubness,"2")
-max_9047_log <- get_max(hubness_log,"9047")
-max_5000_log <- get_max(hubness_log,"5000")
-max_1000_log <- get_max(hubness_log,"1000")
-max_500_log <- get_max(hubness_log,"500")
-max_100_log <- get_max(hubness_log,"100")
-max_50_log <- get_max(hubness_log,"50")
-max_10_log <- get_max(hubness_log,"10")
-max_5_log <- get_max(hubness_log,"5")
-max_2_log <- get_max(hubness_log,"2")
+max_9047 <- get_max(hubness,"9047", ymin=9, ymax=10)
+max_5000 <- get_max(hubness,"5000", ymin=8, ymax=9)
+max_1000 <- get_max(hubness,"1000", ymin=7, ymax=8)
+max_500 <- get_max(hubness,"500", ymin=6, ymax=7)
+max_100 <- get_max(hubness,"100", ymin=5, ymax=6)
+max_50 <- get_max(hubness,"50", ymin=4, ymax=5)
+max_10 <- get_max(hubness,"10", ymin=3, ymax=4)
+max_5 <- get_max(hubness,"5", ymin=2, ymax=3)
+max_2 <- get_max(hubness,"2", ymin=1, ymax=2)
+max_9047_log <- get_max(hubness_log,"9047", ymin=9, ymax=10)
+max_5000_log <- get_max(hubness_log,"5000", ymin=8, ymax=9)
+max_1000_log <- get_max(hubness_log,"1000", ymin=7, ymax=8)
+max_500_log <- get_max(hubness_log,"500", ymin=6, ymax=7)
+max_100_log <- get_max(hubness_log,"100", ymin=5, ymax=6)
+max_50_log <- get_max(hubness_log,"50", ymin=4, ymax=5)
+max_10_log <- get_max(hubness_log,"10", ymin=3, ymax=4)
+max_5_log <- get_max(hubness_log,"5", ymin=2, ymax=3)
+max_2_log <- get_max(hubness_log,"2", ymin=1, ymax=2)
 
 ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   geom_density_ridges() +
@@ -303,15 +307,15 @@ ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=0.1')
 ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
@@ -320,15 +324,15 @@ ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score (log)") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047_log, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000_log, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000_log, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500_log, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100_log, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50_log, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10_log, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5_log, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2_log, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047_log, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000_log, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000_log, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500_log, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100_log, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50_log, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10_log, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5_log, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2_log, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=0.1')
 ```
@@ -362,6 +366,7 @@ ggplot(hubness_log, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dime
 # First letter = pvalue
 # Second letter = kvalue
 # Third letter = dim value
+# ----
 ba_1 <- data.frame("Hubness_score" = h5_2[[2]])
 ba_2 <- data.frame("Hubness_score" = h5_5[[2]])
 ba_3 <- data.frame("Hubness_score" = h5_10[[2]])
@@ -524,6 +529,7 @@ bf_6$Dimension <- "500"
 bf_7$Dimension <- "1000"
 bf_8$Dimension <- "5000"
 bf_9$Dimension <- "9047"
+# ----
 hubness <- rbind(ba_1,ba_2,ba_3,ba_4,ba_5,ba_6,ba_7,ba_8,ba_9,
                  bb_1,bb_2,bb_3,bb_4,bb_5,bb_6,bb_7,bb_8,bb_9,
                  bc_1,bc_2,bc_3,bc_4,bc_5,bc_6,bc_7,bc_8,bc_9,
@@ -542,26 +548,25 @@ hubness <- hubness[hubness$Hubness_score != 0,]
 # Log to zoom on differences
 hubness_log <- hubness
 hubness_log$Hubness_score <- log(hubness_log$Hubness_score)
-
 # Viz
-max_9047 <- get_max(hubness,"9047")
-max_5000 <- get_max(hubness,"5000")
-max_1000 <- get_max(hubness,"1000")
-max_500 <- get_max(hubness,"500")
-max_100 <- get_max(hubness,"100")
-max_50 <- get_max(hubness,"50")
-max_10 <- get_max(hubness,"10")
-max_5 <- get_max(hubness,"5")
-max_2 <- get_max(hubness,"2")
-max_9047_log <- get_max(hubness_log,"9047")
-max_5000_log <- get_max(hubness_log,"5000")
-max_1000_log <- get_max(hubness_log,"1000")
-max_500_log <- get_max(hubness_log,"500")
-max_100_log <- get_max(hubness_log,"100")
-max_50_log <- get_max(hubness_log,"50")
-max_10_log <- get_max(hubness_log,"10")
-max_5_log <- get_max(hubness_log,"5")
-max_2_log <- get_max(hubness_log,"2")
+max_9047 <- get_max(hubness,"9047", ymin=9, ymax=10)
+max_5000 <- get_max(hubness,"5000", ymin=8, ymax=9)
+max_1000 <- get_max(hubness,"1000", ymin=7, ymax=8)
+max_500 <- get_max(hubness,"500", ymin=6, ymax=7)
+max_100 <- get_max(hubness,"100", ymin=5, ymax=6)
+max_50 <- get_max(hubness,"50", ymin=4, ymax=5)
+max_10 <- get_max(hubness,"10", ymin=3, ymax=4)
+max_5 <- get_max(hubness,"5", ymin=2, ymax=3)
+max_2 <- get_max(hubness,"2", ymin=1, ymax=2)
+max_9047_log <- get_max(hubness_log,"9047", ymin=9, ymax=10)
+max_5000_log <- get_max(hubness_log,"5000", ymin=8, ymax=9)
+max_1000_log <- get_max(hubness_log,"1000", ymin=7, ymax=8)
+max_500_log <- get_max(hubness_log,"500", ymin=6, ymax=7)
+max_100_log <- get_max(hubness_log,"100", ymin=5, ymax=6)
+max_50_log <- get_max(hubness_log,"50", ymin=4, ymax=5)
+max_10_log <- get_max(hubness_log,"10", ymin=3, ymax=4)
+max_5_log <- get_max(hubness_log,"5", ymin=2, ymax=3)
+max_2_log <- get_max(hubness_log,"2", ymin=1, ymax=2)
 
 ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   geom_density_ridges() +
@@ -569,15 +574,15 @@ ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=0.5')
 ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
@@ -586,21 +591,20 @@ ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score (log)") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047_log, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000_log, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000_log, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500_log, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100_log, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50_log, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10_log, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5_log, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2_log, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047_log, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000_log, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000_log, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500_log, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100_log, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50_log, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10_log, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5_log, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2_log, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=0.5')
-
 ```
 
-```{r test violin, p=0.5}
+```{r test violin, p=0.5 with facet wrap}
 ggplot(hubness, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dimension)) +
     geom_violin(width=1, size=0.8) +
     geom_jitter(position = position_jitter(0.2), cex=0.1, alpha = 0.1) +
@@ -611,7 +615,8 @@ ggplot(hubness, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dimensio
     coord_flip() + # This switch X and Y axis and allows to get the horizontal version
     xlab("Dimension of the tested space (p=0.5)") +
     ylab("Hubness score") +
-    theme_grey(base_size = 15)
+    theme_grey(base_size = 15) +
+  facet_wrap( ~ k)
 ggplot(hubness_log, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dimension)) +
     geom_violin(width=1, size=0.8) +
     geom_jitter(position = position_jitter(0.2), cex=0.1, alpha = 0.1) +
@@ -629,6 +634,7 @@ ggplot(hubness_log, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dime
 # First letter = pvalue
 # Second letter = kvalue
 # Third letter = dim value
+# ----
 ca_1 <- data.frame("Hubness_score" = h5_2[[3]])
 ca_2 <- data.frame("Hubness_score" = h5_5[[3]])
 ca_3 <- data.frame("Hubness_score" = h5_10[[3]])
@@ -791,6 +797,7 @@ cf_6$Dimension <- "500"
 cf_7$Dimension <- "1000"
 cf_8$Dimension <- "5000"
 cf_9$Dimension <- "9047"
+# ----
 hubness <- rbind(ca_1,ca_2,ca_3,ca_4,ca_5,ca_6,ca_7,ca_8,ca_9,
                  cb_1,cb_2,cb_3,cb_4,cb_5,cb_6,cb_7,cb_8,cb_9,
                  cc_1,cc_2,cc_3,cc_4,cc_5,cc_6,cc_7,cc_8,cc_9,
@@ -810,24 +817,24 @@ hubness <- hubness[hubness$Hubness_score != 0,]
 hubness_log <- hubness
 hubness_log$Hubness_score <- log(hubness_log$Hubness_score)
 # Viz
-max_9047 <- get_max(hubness,"9047")
-max_5000 <- get_max(hubness,"5000")
-max_1000 <- get_max(hubness,"1000")
-max_500 <- get_max(hubness,"500")
-max_100 <- get_max(hubness,"100")
-max_50 <- get_max(hubness,"50")
-max_10 <- get_max(hubness,"10")
-max_5 <- get_max(hubness,"5")
-max_2 <- get_max(hubness,"2")
-max_9047_log <- get_max(hubness_log,"9047")
-max_5000_log <- get_max(hubness_log,"5000")
-max_1000_log <- get_max(hubness_log,"1000")
-max_500_log <- get_max(hubness_log,"500")
-max_100_log <- get_max(hubness_log,"100")
-max_50_log <- get_max(hubness_log,"50")
-max_10_log <- get_max(hubness_log,"10")
-max_5_log <- get_max(hubness_log,"5")
-max_2_log <- get_max(hubness_log,"2")
+max_9047 <- get_max(hubness,"9047", ymin=9, ymax=10)
+max_5000 <- get_max(hubness,"5000", ymin=8, ymax=9)
+max_1000 <- get_max(hubness,"1000", ymin=7, ymax=8)
+max_500 <- get_max(hubness,"500", ymin=6, ymax=7)
+max_100 <- get_max(hubness,"100", ymin=5, ymax=6)
+max_50 <- get_max(hubness,"50", ymin=4, ymax=5)
+max_10 <- get_max(hubness,"10", ymin=3, ymax=4)
+max_5 <- get_max(hubness,"5", ymin=2, ymax=3)
+max_2 <- get_max(hubness,"2", ymin=1, ymax=2)
+max_9047_log <- get_max(hubness_log,"9047", ymin=9, ymax=10)
+max_5000_log <- get_max(hubness_log,"5000", ymin=8, ymax=9)
+max_1000_log <- get_max(hubness_log,"1000", ymin=7, ymax=8)
+max_500_log <- get_max(hubness_log,"500", ymin=6, ymax=7)
+max_100_log <- get_max(hubness_log,"100", ymin=5, ymax=6)
+max_50_log <- get_max(hubness_log,"50", ymin=4, ymax=5)
+max_10_log <- get_max(hubness_log,"10", ymin=3, ymax=4)
+max_5_log <- get_max(hubness_log,"5", ymin=2, ymax=3)
+max_2_log <- get_max(hubness_log,"2", ymin=1, ymax=2)
 
 ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   geom_density_ridges() +
@@ -835,15 +842,15 @@ ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=1')
 ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
@@ -852,15 +859,15 @@ ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score (log)") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047_log, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000_log, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000_log, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500_log, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100_log, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50_log, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10_log, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5_log, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2_log, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047_log, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000_log, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000_log, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500_log, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100_log, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50_log, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10_log, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5_log, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2_log, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=1')
 ```
@@ -895,6 +902,7 @@ ggplot(hubness_log, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dime
 # First letter = pvalue
 # Second letter = kvalue
 # Third letter = dim value
+# ----
 da_1 <- data.frame("Hubness_score" = h5_2[[4]])
 da_2 <- data.frame("Hubness_score" = h5_5[[4]])
 da_3 <- data.frame("Hubness_score" = h5_10[[4]])
@@ -1057,6 +1065,7 @@ df_6$Dimension <- "500"
 df_7$Dimension <- "1000"
 df_8$Dimension <- "5000"
 df_9$Dimension <- "9047"
+# ----
 hubness <- rbind(da_1,da_2,da_3,da_4,da_5,da_6,da_7,da_8,da_9,
                  db_1,db_2,db_3,db_4,db_5,db_6,db_7,db_8,db_9,
                  dc_1,dc_2,dc_3,dc_4,dc_5,dc_6,dc_7,dc_8,dc_9,
@@ -1076,24 +1085,24 @@ hubness <- hubness[hubness$Hubness_score != 0,]
 hubness_log <- hubness
 hubness_log$Hubness_score <- log(hubness_log$Hubness_score)
 # Viz
-max_9047 <- get_max(hubness,"9047")
-max_5000 <- get_max(hubness,"5000")
-max_1000 <- get_max(hubness,"1000")
-max_500 <- get_max(hubness,"500")
-max_100 <- get_max(hubness,"100")
-max_50 <- get_max(hubness,"50")
-max_10 <- get_max(hubness,"10")
-max_5 <- get_max(hubness,"5")
-max_2 <- get_max(hubness,"2")
-max_9047_log <- get_max(hubness_log,"9047")
-max_5000_log <- get_max(hubness_log,"5000")
-max_1000_log <- get_max(hubness_log,"1000")
-max_500_log <- get_max(hubness_log,"500")
-max_100_log <- get_max(hubness_log,"100")
-max_50_log <- get_max(hubness_log,"50")
-max_10_log <- get_max(hubness_log,"10")
-max_5_log <- get_max(hubness_log,"5")
-max_2_log <- get_max(hubness_log,"2")
+max_9047 <- get_max(hubness,"9047", ymin=9, ymax=10)
+max_5000 <- get_max(hubness,"5000", ymin=8, ymax=9)
+max_1000 <- get_max(hubness,"1000", ymin=7, ymax=8)
+max_500 <- get_max(hubness,"500", ymin=6, ymax=7)
+max_100 <- get_max(hubness,"100", ymin=5, ymax=6)
+max_50 <- get_max(hubness,"50", ymin=4, ymax=5)
+max_10 <- get_max(hubness,"10", ymin=3, ymax=4)
+max_5 <- get_max(hubness,"5", ymin=2, ymax=3)
+max_2 <- get_max(hubness,"2", ymin=1, ymax=2)
+max_9047_log <- get_max(hubness_log,"9047", ymin=9, ymax=10)
+max_5000_log <- get_max(hubness_log,"5000", ymin=8, ymax=9)
+max_1000_log <- get_max(hubness_log,"1000", ymin=7, ymax=8)
+max_500_log <- get_max(hubness_log,"500", ymin=6, ymax=7)
+max_100_log <- get_max(hubness_log,"100", ymin=5, ymax=6)
+max_50_log <- get_max(hubness_log,"50", ymin=4, ymax=5)
+max_10_log <- get_max(hubness_log,"10", ymin=3, ymax=4)
+max_5_log <- get_max(hubness_log,"5", ymin=2, ymax=3)
+max_2_log <- get_max(hubness_log,"2", ymin=1, ymax=2)
 
 ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   geom_density_ridges() +
@@ -1101,15 +1110,15 @@ ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=1.5')
 ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
@@ -1118,15 +1127,15 @@ ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score (log)") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047_log, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000_log, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000_log, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500_log, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100_log, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50_log, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10_log, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5_log, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2_log, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047_log, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000_log, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000_log, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500_log, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100_log, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50_log, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10_log, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5_log, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2_log, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=1.5')
 ```
@@ -1161,6 +1170,7 @@ ggplot(hubness_log, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dime
 # First letter = pvalue
 # Second letter = kvalue
 # Third letter = dim value
+# ----
 ea_1 <- data.frame("Hubness_score" = h5_2[[4]])
 ea_2 <- data.frame("Hubness_score" = h5_5[[4]])
 ea_3 <- data.frame("Hubness_score" = h5_10[[4]])
@@ -1323,6 +1333,7 @@ ef_6$Dimension <- "500"
 ef_7$Dimension <- "1000"
 ef_8$Dimension <- "5000"
 ef_9$Dimension <- "9047"
+# ----
 hubness <- rbind(ea_1,ea_2,ea_3,ea_4,ea_5,ea_6,ea_7,ea_8,ea_9,
                  eb_1,eb_2,eb_3,eb_4,eb_5,eb_6,eb_7,eb_8,eb_9,
                  ec_1,ec_2,ec_3,ec_4,ec_5,ec_6,ec_7,ec_8,ec_9,
@@ -1342,24 +1353,24 @@ hubness <- hubness[hubness$Hubness_score != 0,]
 hubness_log <- hubness
 hubness_log$Hubness_score <- log(hubness_log$Hubness_score)
 # Viz
-max_9047 <- get_max(hubness,"9047")
-max_5000 <- get_max(hubness,"5000")
-max_1000 <- get_max(hubness,"1000")
-max_500 <- get_max(hubness,"500")
-max_100 <- get_max(hubness,"100")
-max_50 <- get_max(hubness,"50")
-max_10 <- get_max(hubness,"10")
-max_5 <- get_max(hubness,"5")
-max_2 <- get_max(hubness,"2")
-max_9047_log <- get_max(hubness_log,"9047")
-max_5000_log <- get_max(hubness_log,"5000")
-max_1000_log <- get_max(hubness_log,"1000")
-max_500_log <- get_max(hubness_log,"500")
-max_100_log <- get_max(hubness_log,"100")
-max_50_log <- get_max(hubness_log,"50")
-max_10_log <- get_max(hubness_log,"10")
-max_5_log <- get_max(hubness_log,"5")
-max_2_log <- get_max(hubness_log,"2")
+max_9047 <- get_max(hubness,"9047", ymin=9, ymax=10)
+max_5000 <- get_max(hubness,"5000", ymin=8, ymax=9)
+max_1000 <- get_max(hubness,"1000", ymin=7, ymax=8)
+max_500 <- get_max(hubness,"500", ymin=6, ymax=7)
+max_100 <- get_max(hubness,"100", ymin=5, ymax=6)
+max_50 <- get_max(hubness,"50", ymin=4, ymax=5)
+max_10 <- get_max(hubness,"10", ymin=3, ymax=4)
+max_5 <- get_max(hubness,"5", ymin=2, ymax=3)
+max_2 <- get_max(hubness,"2", ymin=1, ymax=2)
+max_9047_log <- get_max(hubness_log,"9047", ymin=9, ymax=10)
+max_5000_log <- get_max(hubness_log,"5000", ymin=8, ymax=9)
+max_1000_log <- get_max(hubness_log,"1000", ymin=7, ymax=8)
+max_500_log <- get_max(hubness_log,"500", ymin=6, ymax=7)
+max_100_log <- get_max(hubness_log,"100", ymin=5, ymax=6)
+max_50_log <- get_max(hubness_log,"50", ymin=4, ymax=5)
+max_10_log <- get_max(hubness_log,"10", ymin=3, ymax=4)
+max_5_log <- get_max(hubness_log,"5", ymin=2, ymax=3)
+max_2_log <- get_max(hubness_log,"2", ymin=1, ymax=2)
 
 ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   geom_density_ridges() +
@@ -1367,15 +1378,15 @@ ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=2')
 ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
@@ -1384,15 +1395,15 @@ ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score (log)") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047_log, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000_log, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000_log, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500_log, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100_log, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50_log, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10_log, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5_log, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2_log, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047_log, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000_log, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000_log, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500_log, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100_log, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50_log, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10_log, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5_log, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2_log, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=2')
 ```
@@ -1426,6 +1437,7 @@ ggplot(hubness_log, aes(x=Dimension, y=Hubness_score, color=Dimension, fill=Dime
 # First letter = pvalue
 # Second letter = kvalue
 # Third letter = dim value
+# ----
 fa_1 <- data.frame("Hubness_score" = h5_2[[4]])
 fa_2 <- data.frame("Hubness_score" = h5_5[[4]])
 fa_3 <- data.frame("Hubness_score" = h5_10[[4]])
@@ -1588,6 +1600,7 @@ ff_6$Dimension <- "500"
 ff_7$Dimension <- "1000"
 ff_8$Dimension <- "5000"
 ff_9$Dimension <- "9047"
+# ----
 hubness <- rbind(fa_1,fa_2,fa_3,fa_4,fa_5,fa_6,fa_7,fa_8,fa_9,
                  fb_1,fb_2,fb_3,fb_4,fb_5,fb_6,fb_7,fb_8,fb_9,
                  fc_1,fc_2,fc_3,fc_4,fc_5,fc_6,fc_7,fc_8,fc_9,
@@ -1607,24 +1620,24 @@ hubness <- hubness[hubness$Hubness_score != 0,]
 hubness_log <- hubness
 hubness_log$Hubness_score <- log(hubness_log$Hubness_score)
 # Viz
-max_9047 <- get_max(hubness,"9047")
-max_5000 <- get_max(hubness,"5000")
-max_1000 <- get_max(hubness,"1000")
-max_500 <- get_max(hubness,"500")
-max_100 <- get_max(hubness,"100")
-max_50 <- get_max(hubness,"50")
-max_10 <- get_max(hubness,"10")
-max_5 <- get_max(hubness,"5")
-max_2 <- get_max(hubness,"2")
-max_9047_log <- get_max(hubness_log,"9047")
-max_5000_log <- get_max(hubness_log,"5000")
-max_1000_log <- get_max(hubness_log,"1000")
-max_500_log <- get_max(hubness_log,"500")
-max_100_log <- get_max(hubness_log,"100")
-max_50_log <- get_max(hubness_log,"50")
-max_10_log <- get_max(hubness_log,"10")
-max_5_log <- get_max(hubness_log,"5")
-max_2_log <- get_max(hubness_log,"2")
+max_9047 <- get_max(hubness,"9047", ymin=9, ymax=10)
+max_5000 <- get_max(hubness,"5000", ymin=8, ymax=9)
+max_1000 <- get_max(hubness,"1000", ymin=7, ymax=8)
+max_500 <- get_max(hubness,"500", ymin=6, ymax=7)
+max_100 <- get_max(hubness,"100", ymin=5, ymax=6)
+max_50 <- get_max(hubness,"50", ymin=4, ymax=5)
+max_10 <- get_max(hubness,"10", ymin=3, ymax=4)
+max_5 <- get_max(hubness,"5", ymin=2, ymax=3)
+max_2 <- get_max(hubness,"2", ymin=1, ymax=2)
+max_9047_log <- get_max(hubness_log,"9047", ymin=9, ymax=10)
+max_5000_log <- get_max(hubness_log,"5000", ymin=8, ymax=9)
+max_1000_log <- get_max(hubness_log,"1000", ymin=7, ymax=8)
+max_500_log <- get_max(hubness_log,"500", ymin=6, ymax=7)
+max_100_log <- get_max(hubness_log,"100", ymin=5, ymax=6)
+max_50_log <- get_max(hubness_log,"50", ymin=4, ymax=5)
+max_10_log <- get_max(hubness_log,"10", ymin=3, ymax=4)
+max_5_log <- get_max(hubness_log,"5", ymin=2, ymax=3)
+max_2_log <- get_max(hubness_log,"2", ymin=1, ymax=2)
 
 ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   geom_density_ridges() +
@@ -1632,15 +1645,15 @@ ggplot(hubness, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=4')
 ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
@@ -1649,15 +1662,15 @@ ggplot(hubness_log, aes(x = Hubness_score, y = Dimension, fill = Dimension)) +
   theme(legend.position = "none") +
   xlab("Hubness score (log)") +
   ylab("Dimension of the input space") +
-  geom_vline(aes(xintercept = max), max_9047_log, size=1, colour=hue_pal()(9)[9]) +
-  geom_vline(aes(xintercept = max), max_5000_log, size=1, colour=hue_pal()(9)[8]) +
-  geom_vline(aes(xintercept = max), max_1000_log, size=1, colour=hue_pal()(9)[7]) +
-  geom_vline(aes(xintercept = max), max_500_log, size=1, colour=hue_pal()(9)[6]) +
-  geom_vline(aes(xintercept = max), max_100_log, size=1, colour=hue_pal()(9)[5]) +
-  geom_vline(aes(xintercept = max), max_50_log, size=1, colour=hue_pal()(9)[4]) +
-  geom_vline(aes(xintercept = max), max_10_log, size=1, colour=hue_pal()(9)[3]) +
-  geom_vline(aes(xintercept = max), max_5_log, size=1, colour=hue_pal()(9)[2]) +
-  geom_vline(aes(xintercept = max), max_2_log, size=1, colour=hue_pal()(9)[1]) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_9047_log, size=1, colour=hue_pal()(9)[9], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5000_log, size=1, colour=hue_pal()(9)[8], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_1000_log, size=1, colour=hue_pal()(9)[7], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_500_log, size=1, colour=hue_pal()(9)[6], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_100_log, size=1, colour=hue_pal()(9)[5], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_50_log, size=1, colour=hue_pal()(9)[4], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_10_log, size=1, colour=hue_pal()(9)[3], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_5_log, size=1, colour=hue_pal()(9)[2], inherit.aes = F) +
+  geom_segment(aes(x = max, xend = max, y = ymin, yend = ymax), max_2_log, size=1, colour=hue_pal()(9)[1], inherit.aes = F) +
   facet_wrap( ~ k) +
   ggtitle('Hubness scores histogram with Lp norm,\np=4')
 ```
