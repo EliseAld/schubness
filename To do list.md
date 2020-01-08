@@ -11,7 +11,8 @@ EA
 ---------
 - Quasi uniform distribution for hubness calibration
 - Various plots
-- Toolbox to define 'global' hubness
+- Toolbox to define 'global' hubness : looks like the most appropriate are skewness, antihubs, maybe MAD ?
+:white_check_mark:
 - Hub position in tSNE/UMAP/PCA space
 - Antihubs
 - Get Smartseq/10X data
