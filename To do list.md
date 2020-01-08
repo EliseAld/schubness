@@ -14,6 +14,7 @@ EA
 - Toolbox to define 'global' hubness : looks like the most appropriate are skewness, antihubs, maybe MAD ?
 :white_check_mark:
 - Hub position in tSNE/UMAP/PCA space
+:white_check_mark:
 - Antihubs
 - Get Smartseq/10X data
 :white_check_mark:
