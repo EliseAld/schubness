@@ -16,6 +16,7 @@ EA
 - Hub position in tSNE/UMAP/PCA space
 :white_check_mark:
 - Antihubs
+:white_check_mark:
 - Get Smartseq/10X data
 :white_check_mark:
 - Transcriptome comparison
