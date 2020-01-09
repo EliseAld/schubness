@@ -16,7 +16,9 @@ Labelled T cells (not all sequenced cells are labelled, only 9055 out of 12k)
 - Tfh dataset from Soumelis team 
 :white_check_mark:
 
-- Ask Akira for a well separated dataset of immune cells
+- Ask Akira for a well separated dataset of immune cells : suggestion is
+https://satijalab.org/seurat/v3.1/multimodal_vignette.html
+:white_check_mark:
 
 Synthetic
 -----
