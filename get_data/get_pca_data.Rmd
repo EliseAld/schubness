@@ -16,13 +16,15 @@ seurat[["percent.mt"]] <- PercentageFeatureSet(seurat, pattern = "^MT-")
 VlnPlot(seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
 FeatureScatter(seurat, feature1 = "nFeature_RNA", feature2 = "nCount_RNA")
 # Remove cells with more than 7500 genes or 5e+06 total counts
-seurat <- subset(seurat, subset = nFeature_RNA<7500 & nCount_RNA<5e+06) # 9048 cells
+seurat <- subset(seurat, subset = nFeature_RNA<7500 & nCount_RNA<5e+06)
+# 9048 cells for Guo
 # Normalize + log transfo + scale
 seurat <- NormalizeData(seurat)
 seurat <- ScaleData(seurat)
 data <- GetAssayData(seurat)
 # PCA
 pca <- prcomp(data)
-data_proj <- t(pca$rotation) # 9048 PCs x 9048 cells
+data_proj <- t(pca$rotation)
+# 9048 PCs x 9048 cells for Guo
 write.table(data_proj, file=data_out)
 ```
