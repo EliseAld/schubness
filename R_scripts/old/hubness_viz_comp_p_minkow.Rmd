@@ -14,7 +14,7 @@ library(scales)
 ```
 
 ```{r functions}
-source(file="/Users/elise/Desktop/GitHub/Hubness_sc/Analysis/hubness_load_write_data.R")
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hubness_load_write_data.R")
 get_rectange <- function(df,kval,dim1,dim2,p,ymin,ymax) {
    rect <- data.frame("k"=kval,
                       "xmin"=c(min(max(df$Hubness_score[df$k==kval[1] & df$Dimension==dim1 & df$p==p]),
@@ -58,17 +58,17 @@ get_rectange <- function(df,kval,dim1,dim2,p,ymin,ymax) {
 }
 ```
 
-```{r comp p=0.1 log, echo=FALSE}
+```{r comp p=0.1, echo=FALSE}
 # Merge the dfs
-dif_1 <- get_rectange(hubness1_log, kval=c(5,10,20,50,100,200),dim1="2",dim2="50",p="0.1",ymin=1,ymax=2.5)
-dif_2 <- get_rectange(hubness1_log, kval=c(5,10,20,50,100,200),dim1="50",dim2="500",p="0.1",ymin=2,ymax=3.5)
+dif_1 <- get_rectange(hubness1, kval=c(5,10,20,50,100,200),dim1="2",dim2="50",p="0.1",ymin=1,ymax=2.5)
+dif_2 <- get_rectange(hubness1, kval=c(5,10,20,50,100,200),dim1="50",dim2="500",p="0.1",ymin=2,ymax=3.5)
 
 # Viz
-ggplot(hubness1_log, aes(x = Hubness_score, y = Dimension, fill = p)) +
+ggplot(hubness1, aes(x = Hubness_score, y = Dimension, fill = p)) +
   scale_fill_manual(values = "royalblue2") +
   geom_density_ridges() +
   theme_ridges() +
-  xlab("Hubness score (log)") +
+  xlab("Hubness score") +
   ylab("Dimension of the input space") +
   geom_rect(aes(x=NULL, y=NULL, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), dif_1, alpha=0.6, fill=c("violetred1","seagreen3")[factor(dif_1$order, levels=c(F,T))]) +
   geom_rect(aes(x=NULL, y=NULL, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax), dif_2, alpha=0.6, fill=c("violetred1","seagreen3")[factor(dif_2$order, levels=c(F,T))]) +

@@ -1,66 +1,67 @@
+cell_nb=9048
 # Data loading
-h5_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca2_minkow.rds")
-h10_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca2_minkow.rds")
-h20_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca2_minkow.rds")
-h50_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca2_minkow.rds")
-h100_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca2_minkow.rds")
-h200_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca2_minkow.rds")
+h5_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca2_minkow.rds")
+h10_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca2_minkow.rds")
+h20_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca2_minkow.rds")
+h50_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca2_minkow.rds")
+h100_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca2_minkow.rds")
+h200_2 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca2_minkow.rds")
 
-h5_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca5_minkow.rds")
-h10_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca5_minkow.rds")
-h20_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca5_minkow.rds")
-h50_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca5_minkow.rds")
-h100_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca5_minkow.rds")
-h200_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca5_minkow.rds")
+h5_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca5_minkow.rds")
+h10_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca5_minkow.rds")
+h20_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca5_minkow.rds")
+h50_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca5_minkow.rds")
+h100_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca5_minkow.rds")
+h200_5 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca5_minkow.rds")
 
-h5_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca10_minkow.rds")
-h10_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca10_minkow.rds")
-h20_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca10_minkow.rds")
-h50_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca10_minkow.rds")
-h100_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca10_minkow.rds")
-h200_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca10_minkow.rds")
+h5_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca10_minkow.rds")
+h10_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca10_minkow.rds")
+h20_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca10_minkow.rds")
+h50_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca10_minkow.rds")
+h100_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca10_minkow.rds")
+h200_10 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca10_minkow.rds")
 
-h5_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca50_minkow.rds")
-h10_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca50_minkow.rds")
-h20_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca50_minkow.rds")
-h50_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca50_minkow.rds")
-h100_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca50_minkow.rds")
-h200_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca50_minkow.rds")
+h5_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca50_minkow.rds")
+h10_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca50_minkow.rds")
+h20_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca50_minkow.rds")
+h50_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca50_minkow.rds")
+h100_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca50_minkow.rds")
+h200_50 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca50_minkow.rds")
 
-h5_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca100_minkow.rds")
-h10_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca100_minkow.rds")
-h20_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca100_minkow.rds")
-h50_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca100_minkow.rds")
-h100_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca100_minkow.rds")
-h200_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca100_minkow.rds")
+h5_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca100_minkow.rds")
+h10_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca100_minkow.rds")
+h20_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca100_minkow.rds")
+h50_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca100_minkow.rds")
+h100_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca100_minkow.rds")
+h200_100 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca100_minkow.rds")
 
-h5_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca500_minkow.rds")
-h10_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca500_minkow.rds")
-h20_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca500_minkow.rds")
-h50_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca500_minkow.rds")
-h100_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca500_minkow.rds")
-h200_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca500_minkow.rds")
+h5_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca500_minkow.rds")
+h10_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca500_minkow.rds")
+h20_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca500_minkow.rds")
+h50_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca500_minkow.rds")
+h100_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca500_minkow.rds")
+h200_500 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca500_minkow.rds")
 
-h5_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca1000_minkow.rds")
-h10_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca1000_minkow.rds")
-h20_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca1000_minkow.rds")
-h50_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca1000_minkow.rds")
-h100_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca1000_minkow.rds")
-h200_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca1000_minkow.rds")
+h5_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca1000_minkow.rds")
+h10_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca1000_minkow.rds")
+h20_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca1000_minkow.rds")
+h50_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca1000_minkow.rds")
+h100_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca1000_minkow.rds")
+h200_1000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca1000_minkow.rds")
 
-h5_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca5000_minkow.rds")
-h10_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca5000_minkow.rds")
-h20_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca5000_minkow.rds")
-h50_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca5000_minkow.rds")
-h100_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca5000_minkow.rds")
-h200_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca5000_minkow.rds")
+h5_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca5000_minkow.rds")
+h10_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca5000_minkow.rds")
+h20_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca5000_minkow.rds")
+h50_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca5000_minkow.rds")
+h100_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca5000_minkow.rds")
+h200_5000 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca5000_minkow.rds")
 
-h5_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_5_pca9047_minkow.rds")
-h10_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_10_pca9047_minkow.rds")
-h20_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_20_pca9047_minkow.rds")
-h50_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_50_pca9047_minkow.rds")
-h100_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_100_pca9047_minkow.rds")
-h200_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/Results/kNN_occurence_200_pca9047_minkow.rds")
+h5_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_5_pca9047_minkow.rds")
+h10_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_10_pca9047_minkow.rds")
+h20_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_20_pca9047_minkow.rds")
+h50_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_50_pca9047_minkow.rds")
+h100_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_100_pca9047_minkow.rds")
+h200_9047 <- readRDS("/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/results_guo/kNN_occurence_200_pca9047_minkow.rds")
 
 # Data writing
 
@@ -1124,13 +1125,24 @@ hubness3$Dimension <- factor(hubness3$Dimension, levels = c("2","5","10","50","1
 hubness4$Dimension <- factor(hubness4$Dimension, levels = c("2","5","10","50","100","500","1000","5000","9047"))
 hubness5$Dimension <- factor(hubness5$Dimension, levels = c("2","5","10","50","100","500","1000","5000","9047"))
 hubness6$Dimension <- factor(hubness6$Dimension, levels = c("2","5","10","50","100","500","1000","5000","9047"))
-# Removing cells with hubness score = 0
-hubness1 <- hubness1[hubness1$Hubness_score != 0,]
-hubness2 <- hubness2[hubness2$Hubness_score != 0,]
-hubness3 <- hubness3[hubness3$Hubness_score != 0,]
-hubness4 <- hubness4[hubness4$Hubness_score != 0,]
-hubness5 <- hubness5[hubness5$Hubness_score != 0,]
-hubness6 <- hubness6[hubness6$Hubness_score != 0,]
+# Removing cells with hubness score = 0 DO NOT DO IT
+find_antihub <- function(hubness_df, cell_nb) {
+   dim_nb = length(unique(hubness_df$Dimension))
+   k_nb = length(unique(hubness_df$k))
+   ah = c()
+   for (i in 1:(dim_nb*k_nb)) {
+      borne_inf=(cell_nb*(i-1)+1)
+      borne_sup=cell_nb*i
+      ah = c(ah,sum(hubness_df$Hubness_score[borne_inf:borne_sup]==0))
+   }
+   return(ah)
+}
+hubness1$Antihubs <- rep(find_antihub(hubness1, cell_nb = cell_nb),each=cell_nb)
+hubness2$Antihubs <- rep(find_antihub(hubness2, cell_nb = cell_nb),each=cell_nb)
+hubness3$Antihubs <- rep(find_antihub(hubness3, cell_nb = cell_nb),each=cell_nb)
+hubness4$Antihubs <- rep(find_antihub(hubness4, cell_nb = cell_nb),each=cell_nb)
+hubness5$Antihubs <- rep(find_antihub(hubness5, cell_nb = cell_nb),each=cell_nb)
+hubness6$Antihubs <- rep(find_antihub(hubness6, cell_nb = cell_nb),each=cell_nb)
 # Add p val
 hubness1$p <- "0.1"
 hubness2$p <- "0.5"
@@ -1145,12 +1157,12 @@ hubness3_log <- hubness3
 hubness4_log <- hubness4
 hubness5_log <- hubness5
 hubness6_log <- hubness6
-hubness1_log$Hubness_score <- log(hubness1_log$Hubness_score)
-hubness2_log$Hubness_score <- log(hubness2_log$Hubness_score)
-hubness3_log$Hubness_score <- log(hubness3_log$Hubness_score)
-hubness4_log$Hubness_score <- log(hubness4_log$Hubness_score)
-hubness5_log$Hubness_score <- log(hubness5_log$Hubness_score)
-hubness6_log$Hubness_score <- log(hubness6_log$Hubness_score)
+hubness1_log$Hubness_score <- log(hubness1_log$Hubness_score+1)
+hubness2_log$Hubness_score <- log(hubness2_log$Hubness_score+1)
+hubness3_log$Hubness_score <- log(hubness3_log$Hubness_score+1)
+hubness4_log$Hubness_score <- log(hubness4_log$Hubness_score+1)
+hubness5_log$Hubness_score <- log(hubness5_log$Hubness_score+1)
+hubness6_log$Hubness_score <- log(hubness6_log$Hubness_score+1)
 # Merge
 hubness <- rbind(hubness1,hubness2,hubness3,hubness4,hubness5,hubness6)
 hubness_log <- rbind(hubness1_log,hubness2_log,hubness3_log,hubness4_log,hubness5_log,hubness6_log)
