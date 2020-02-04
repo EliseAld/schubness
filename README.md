@@ -6,14 +6,20 @@ Hubness on single-cell RNA sequencing data
 Goals
 -----------
 1. Do we have hubs in scRNAseq ?
-1a. How to define hubs ?
-1b. Are hubs & antihubs different ?
-1c. Are hubs sensitive to dropout ?
-1d. What happens if we remove hubs ?
+
+(1a) How to define hubs ?
+
+(1b) Are hubs & antihubs different ?
+
+(1c) Are hubs sensitive to dropout ?
+
+(1d) What happens if we remove hubs ?
 
 2. Can we use hubs to enhance the clustering analysis ?
-2a. Choosing a better suited norm
-2b. Removing hubs
+
+(2a) Choosing a better suited norm
+
+(2b) Removing hubs
 
 Previous steps
 -----------
