@@ -17,7 +17,7 @@ EA
 :white_check_mark:
 - Antihubs
 :white_check_mark:
-- Get Smartseq/10X data
+- Get Smartseq/10X data (done on Guo http://lung.cancer-pku.cn/ and Satija GSE100866)
 :white_check_mark:
 - Transcriptome comparison
 - Remove hubs
