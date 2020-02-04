@@ -3,6 +3,18 @@ Hubness_sc
 
 Hubness on single-cell RNA sequencing data
 
+Goals
+-----------
+1. Do we have hubs in scRNAseq ?
+1a. How to define hubs ?
+1b. Are hubs & antihubs different ?
+1c. Are hubs sensitive to dropout ?
+1d. What happens if we remove hubs ?
+
+2. Can we use hubs to enhance the clustering analysis ?
+2a. Choosing a better suited norm
+2b. Removing hubs
+
 Previous steps
 -----------
 1. Compute the hubness scores for different dimensions of input space (PCA with various number of PCs, initial space), using the data of Guo et al., 2018 (https://www.ncbi.nlm.nih.gov/pubmed/29942094)
