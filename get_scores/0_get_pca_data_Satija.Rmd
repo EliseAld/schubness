@@ -16,6 +16,7 @@ data <- read.csv(data_in, header = T, row.names = 1)
 # 36280 x 8617 for https://satijalab.org/seurat/v3.1/multimodal_vignette.html
 # For satija data, remove mouse genes
 data <- data[grep("HUMAN_",rownames(data)),] # 20400 genes
+rownames(data) <- gsub("HUMAN_","",rownames(data))
 seurat <- CreateSeuratObject(data)
 seurat[["percent.mt"]] <- PercentageFeatureSet(seurat, pattern = "^MT-")
 VlnPlot(seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
@@ -29,6 +30,8 @@ seurat <- subset(seurat, subset = nFeature_RNA<4000 & nCount_RNA<15e+03)
 # Normalize + log transfo + scale
 seurat <- NormalizeData(seurat)
 seurat <- ScaleData(seurat)
+seurat <- RunPCA(seurat, features=rownames(seurat))
+ElbowPlot(seurat)
 data <- GetAssayData(seurat)
 rm(seurat)
 # PCA
@@ -36,5 +39,6 @@ pca <- prcomp(data)
 data_proj <- t(pca$rotation)
 # 9048 PCs x 9048 cells for Guo
 # 8604 PCs x 8604 cells for Satija
+
 write.table(data_proj, file=data_out)
 ```

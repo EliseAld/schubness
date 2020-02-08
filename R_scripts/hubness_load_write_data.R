@@ -10,9 +10,15 @@ kval=c(5,50,100,200)
 
 localization = "/Users/elise/Desktop/Github/Hubness_sc/results/"
 path_satija = "Satija/bis/"
-#path_guo = "Guo/bis/
+path_guo = "Guo/bis/"
 all_paths=unlist(lapply(X=pcval,
-                        FUN=function(x,y) paste0(localization,path_satija,"kNN_occurence_",y,"_pca",x,"_minkow_bis.rds"),
+                        FUN=function(x,y) paste0(localization,
+                                                 path_satija,
+                                                 "kNN_occurence_",
+                                                 y,
+                                                 "_pca",
+                                                 x,
+                                                 "_minkow_bis.rds"),
                         y=pval))
 hubness_scores_data <- lapply(all_paths,function(x) {readRDS(x)}) # First 7 lists are pca2, then pca5 etc
 

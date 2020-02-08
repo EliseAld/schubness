@@ -24,6 +24,8 @@ seurat <- subset(seurat, subset = nFeature_RNA<7500 & nCount_RNA<35e+05)
 # Normalize + log transfo + scale
 seurat <- NormalizeData(seurat)
 seurat <- ScaleData(seurat)
+seurat <- RunPCA(seurat, features=rownames(seurat))
+ElbowPlot(seurat, ndims=50)
 data <- GetAssayData(seurat)
 rm(seurat)
 # PCA
