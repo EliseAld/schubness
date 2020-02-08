@@ -2,4 +2,5 @@
 *.pdf
 *.txt
 *.pickle
+*.rds
 .ipynb_checkpoints
