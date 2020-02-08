@@ -3,4 +3,5 @@
 *.txt
 *.pickle
 *.rds
+*.zip
 .ipynb_checkpoints
