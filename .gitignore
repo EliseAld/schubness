@@ -4,4 +4,6 @@
 *.pickle
 *.rds
 *.zip
+*.RData
+*.Rhistory
 .ipynb_checkpoints
