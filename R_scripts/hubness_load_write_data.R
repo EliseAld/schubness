@@ -1,8 +1,8 @@
 # ====
 # Data loading
 # ====
-#cell_nb=9047
-cell_nb=8604
+cell_nb=9047
+#cell_nb=8604
 
 pval=c(0.1,0.5,1,1.5,2,4,10)
 pcval=c(2,5,10,50,100,500,1000,5000,(cell_nb-1))
@@ -13,7 +13,7 @@ path_satija = "Satija/bis/"
 path_guo = "Guo/bis/"
 all_paths=unlist(lapply(X=pcval,
                         FUN=function(x,y) paste0(localization,
-                                                 path_satija,
+                                                 path_guo,
                                                  "kNN_occurence_",
                                                  y,
                                                  "_pca",

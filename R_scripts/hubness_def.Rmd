@@ -458,7 +458,7 @@ hub_max_list <- lapply(p_val_test, function(x) get_hub1(hubness, kval=kval,pcval
 names(hub_max_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_max_list, y=p_val_test, FUN=function(x,y) {plot_thd(hubness, x, y)}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_max_list, y=p_val_test, FUN=function(x,y) {plot_thd(hubness, x, y)}), common.legend = T, legend = "right")
 ```
 
 ```{r comp get_hub2 & 2b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
@@ -470,8 +470,8 @@ names(hub_musig_list) <- p_val_test
 names(hub_musigb_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_musig_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "2")}), common.legend = T)
-ggarrange(plotlist = lapply(X=hub_musigb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "2b")}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_musig_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "2")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_musigb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "2b")}), common.legend = T, legend = "right")
 ```
 
 ```{r comp get_hub3, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
@@ -481,7 +481,7 @@ hub_2k_list <- lapply(p_val_test, function(x) get_hub3(hubness, kval=kval,pcval=
 names(hub_2k_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_2k_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "3")}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_2k_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "3")}), common.legend = T, legend = "right")
 ```
 
 ```{r comp get_hub4, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
@@ -491,7 +491,7 @@ hub_skewness_list <- lapply(p_val_test, function(x) get_hub4(hubness, kval=kval,
 names(hub_skewness_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_skewness_list, y=p_val_test, FUN=function(X,y) {plot_evol_pval(X,method_name=paste0("Skewness, p=",y), label.y="Skewness")}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_skewness_list, y=p_val_test, FUN=function(X,y) {plot_evol_pval(X,method_name=paste0("Skewness, p=",y), label.y="Skewness")}), common.legend = T, legend = "right")
 ```
 
 ```{r comp get_hub5 & 5b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
@@ -503,8 +503,8 @@ names(hub_musigleft_list) <- p_val_test
 names(hub_musigleftb_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_musigleft_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "5")}), common.legend = T)
-ggarrange(plotlist = lapply(X=hub_musigleftb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "5b")}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_musigleft_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "5")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_musigleftb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "5b")}), common.legend = T, legend = "right")
 ```
 
 ```{r comp get_hub6, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
@@ -517,7 +517,7 @@ hub_antihub_list <- lapply(p_val_test, function(x) get_hub6(hubness, kval=kval,p
 names(hub_antihub_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_antihub_list, y=p_val_test, FUN=function(X,y) {plot_evol_pval(X, method_name=paste0("Antihubs, p=",y), label.y = "Antihubs")}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_antihub_list, y=p_val_test, FUN=function(X,y) {plot_evol_pval(X, method_name=paste0("Antihubs, p=",y), label.y = "Antihubs")}), common.legend = T, legend = "right")
 ```
 
 ```{r comp get_hub7 & 7b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
@@ -529,8 +529,8 @@ names(hub_mad_list) <- p_val_test
 names(hub_madb_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_mad_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "MAD")}), common.legend = T)
-ggarrange(plotlist = lapply(X=hub_madb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "MADb")}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_mad_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "MAD")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_madb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "MADb")}), common.legend = T, legend = "right")
 ```
 
 ```{r comp get_hub8 & 8b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
@@ -542,8 +542,8 @@ names(hub_mode_list) <- p_val_test
 names(hub_modeb_list) <- p_val_test
 
 # Viz
-ggarrange(plotlist = lapply(X=hub_mode_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "mode")}), common.legend = T)
-ggarrange(plotlist = lapply(X=hub_modeb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "modeb")}), common.legend = T)
+ggarrange(plotlist = lapply(X=hub_mode_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "mode")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_modeb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "modeb")}), common.legend = T, legend = "right")
 ```
 
 ```{r comp all, get_hub1, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
