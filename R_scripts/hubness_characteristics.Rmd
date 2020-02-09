@@ -1,0 +1,215 @@
+---
+title: "What is the difference between (anti)hubs and normal cells?"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r libs, results="hide"}
+library(ggplot2, quietly = T)
+library(viridis, quietly = T)
+library(ggpubr, quietly = T)
+library(Seurat, quietly = T)
+library(cluster, quietly = T)
+```
+
+Method 2 : mu + 3sigma (k=200)
+Method 6 : anti hubs
+Method 7 : MAD (k=200)
+
+```{r functions}
+get_hub2 <- function(df,kval,pcval,pval) { # Using the mean + 3*sd from Tomasev
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            x_thd = c(x_thd, mean(val)+3*sd(val))
+            hub_nb = c(hub_nb, sum(val>=(mean(val)+3*sd(val))))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+get_hub6 <- function(df,kval,pcval,pval) { # anti hubs
+   anti_hub = c()
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+           anti_hub = c(anti_hub,unique(df$Antihubs[df$Dimension==d & df$p==p & df$k==k]))
+         }
+      }
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=anti_hub)
+   hub_val$Dimension <- factor(hub_val$Dimension, levels = pcval)
+   return(hub_val)
+}
+get_hub7 <- function(df,kval,pcval,pval) { # median + 3MAD
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+           val = df$score[df$Dimension==d & df$p==p & df$k==k]
+           x_thd = c(x_thd, median(val)+3*mad(val,
+                                              #center=ifelse(median(val)!=0,median(val),1)
+                                              ))
+           hub_nb = c(hub_nb, sum(val>=(median(val)+3*mad(val,
+                                                          #center=ifelse(median(val)!=0,median(val),1)
+                                                          ))))
+           ymin = c(ymin,y_increment)
+           ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+plot_hub <- function(seurat,hubs,red, pt.size=1) {
+   DimPlot(guo_seurat, reduction = red, cells.highlight = hubs, pt.size = pt.size, sizes.highlight = pt.size)
+}
+```
+
+```{r load data}
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hubness_load_write_data.R")
+guo_data <- read.table("/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/Guo_lung_2018/GSE99254_NSCLC.TCell.S9055.count.labeled.txt")
+guo_labels <- read.table("/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/Guo_lung_2018/Dataset-2019-01-22.csv",sep=";",header = T)
+```
+
+```{r get the hubs with the different methods}
+parameter <- data.frame(200,100,2)
+names(parameter) <- c("k","pc","p")
+val <- hubness$score[hubness$k==parameter$k & hubness$Dimension==parameter$pc & hubness$p==parameter$p]
+thd2 <- get_hub2(hubness,kval=parameter$k,pcval=parameter$pc,pval=parameter$p)$Threshold
+hub2 <- colnames(guo_data)[val>=thd2]
+hub6 <- colnames(guo_data)[val==0]
+thd7 <- get_hub7(hubness,kval=parameter$k,pcval=parameter$pc,pval=parameter$p)$Threshold
+hub7 <- colnames(guo_data)[val>=thd7]
+```
+
+```{r position in various spaces}
+guo_data <- guo_data[,guo_labels$Cell.ID]
+guo_seurat <- CreateSeuratObject(guo_data)
+guo_seurat$FACS <- guo_labels$cellType
+guo_seurat$hub2 <- c("normal","hub")[factor(colnames(guo_seurat) %in% hub2, levels = c("FALSE","TRUE"))]
+guo_seurat$hub6 <- c("normal","antihub")[factor(colnames(guo_seurat) %in% hub6, levels = c("FALSE","TRUE"))]
+guo_seurat$hub7 <- c("normal","hub")[factor(colnames(guo_seurat) %in% hub7, levels = c("FALSE","TRUE"))]
+guo_seurat[["percent.mt"]] <- PercentageFeatureSet(guo_seurat, pattern = "^MT-")
+VlnPlot(guo_seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
+FeatureScatter(guo_seurat, feature1 = "nFeature_RNA", feature2 = "nCount_RNA")
+# Remove cells with more than 7500 genes or 3e+06 total counts
+guo_seurat <- subset(guo_seurat, subset = nFeature_RNA<7500 & nCount_RNA<3e+06) # 9047 cells
+VlnPlot(guo_seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
+# Normalize + log transfo + scale
+library(ggpubr)
+guo_seurat <- NormalizeData(guo_seurat)
+guo_seurat <- ScaleData(guo_seurat)
+guo_seurat <- FindVariableFeatures(guo_seurat)
+guo_seurat <- RunPCA(guo_seurat, verbose = F)
+guo_seurat <- RunUMAP(guo_seurat, dims = 1:50)
+guo_seurat <- RunTSNE(guo_seurat, dims = 1:50)
+plot_pca <- DimPlot(guo_seurat, reduction = "pca", group.by = "FACS", pt.size = 3)
+plot_umap <- DimPlot(guo_seurat, reduction = "umap", group.by = "FACS", pt.size = 3)
+plot_tsne <- DimPlot(guo_seurat, reduction = "tsne", group.by = "FACS", pt.size = 3)
+ggarrange(plot_pca, plot_umap, plot_tsne)
+ggarrange(plot_hub(guo_seurat,red="pca",hubs=hub2),
+          plot_hub(guo_seurat,red="umap",hubs=hub2),
+          plot_hub(guo_seurat,red="tsne",hubs=hub2))
+ggarrange(plot_hub(guo_seurat,red="pca",hubs=hub7),
+          plot_hub(guo_seurat,red="umap",hubs=hub7),
+          plot_hub(guo_seurat,red="tsne",hubs=hub7))
+ggarrange(plot_hub(guo_seurat,red="pca",hubs=hub6),
+          plot_hub(guo_seurat,red="umap",hubs=hub6),
+          plot_hub(guo_seurat,red="tsne",hubs=hub6))
+```
+
+```{r characteristics of hubs/anti hubs vs normal cells}
+ggarrange(VlnPlot(guo_seurat, features = c("nFeature_RNA","nCount_RNA"), group.by = "hub2"),
+          VlnPlot(guo_seurat, features = c("nFeature_RNA","nCount_RNA"), group.by = "hub6"),
+          VlnPlot(guo_seurat, features = c("nFeature_RNA","nCount_RNA"), group.by = "hub7"))
+ggplot(data.frame("nFeature"=guo_seurat$nFeature_RNA,
+                  "hubs"=guo_seurat$hub2),
+       aes(x=nFeature, fill=hubs)) +
+   geom_histogram()
+ggplot(data.frame("nFeature"=guo_seurat$nFeature_RNA,
+                  "hubs"=guo_seurat$hub6),
+       aes(x=nFeature, fill=hubs)) +
+   geom_histogram()
+ggplot(data.frame("nFeature"=guo_seurat$nFeature_RNA,
+                  "hubs"=guo_seurat$hub7),
+       aes(x=nFeature, fill=hubs)) +
+   geom_histogram()
+ggplot(data.frame("nCount"=guo_seurat$nFeature_RNA,
+                  "hubs"=guo_seurat$hub2),
+       aes(x=nCount, fill=hubs)) +
+   geom_histogram()
+ggplot(data.frame("nCount"=guo_seurat$nFeature_RNA,
+                  "hubs"=guo_seurat$hub6),
+       aes(x=nCount, fill=hubs)) +
+   geom_histogram()
+ggplot(data.frame("nCount"=guo_seurat$nFeature_RNA,
+                  "hubs"=guo_seurat$hub7),
+       aes(x=nCount, fill=hubs)) +
+   geom_histogram()
+```
+
+```{r DGE between hubs}
+prop.table(table(guo_seurat$FACS))*100
+prop.table(table(guo_seurat$FACS[unname(guo_seurat$hub2=="normal")]))*100
+prop.table(table(guo_seurat$FACS[unname(guo_seurat$hub2=="hub")]))*100
+prop.table(table(guo_seurat$FACS[unname(guo_seurat$hub6=="normal")]))*100
+prop.table(table(guo_seurat$FACS[unname(guo_seurat$hub6=="antihub")]))*100
+prop.table(table(guo_seurat$FACS[unname(guo_seurat$hub7=="normal")]))*100
+prop.table(table(guo_seurat$FACS[unname(guo_seurat$hub7=="hub")]))*100
+
+guo_hub <- subset(guo_seurat, cells = colnames(guo_seurat)[unname(guo_seurat$hub2=="hub")])
+guo_normal <- subset(guo_seurat, cells = colnames(guo_seurat)[unname(guo_seurat$hub2!="hub")])
+
+guo_normal <- FindNeighbors(guo_normal, dims = 1:20)
+guo_normal <- FindClusters(guo_normal, resolution = 0.5)
+guo_seurat <- FindNeighbors(guo_seurat, dims = 1:20)
+guo_seurat <- FindClusters(guo_seurat, resolution = 0.5)
+DimPlot(guo_normal, reduction = "umap", pt.size = 3)
+DimPlot(guo_seurat, reduction = "umap", pt.size = 3)
+marker_normal <- FindAllMarkers(guo_normal, return.thresh = 0.01, min.diff.pct = 0.15)
+marker_guo <- FindAllMarkers(guo_seurat, return.thresh = 0.01, min.diff.pct = 0.15)
+marker_normal <- marker_normal[marker_normal$p_val_adj<0.01,]
+marker_guo <- marker_guo[marker_guo$p_val_adj<0.01,]
+
+sil_normal <- silhouette(as.numeric(unname(Idents(guo_normal))),
+                         dist(guo_normal@reductions$pca@cell.embeddings[,1:20]))
+sil_guo <- silhouette(as.numeric(unname(Idents(guo_seurat))),
+                         dist(guo_seurat@reductions$pca@cell.embeddings[,1:20]))
+mean(sil_normal[,3])
+mean(sil_guo[,3])
+VlnPlot(guo_normal, c("CD8A","PRF1","CD4","IL7R","IL2RA"))
+VlnPlot(guo_seurat, c("CD8A","PRF1","CD4","IL7R","IL2RA"))
+```
+
