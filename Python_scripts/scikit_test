@@ -1,4 +1,5 @@
 # https://pypi.org/project/scikit-hubness/
+# https://scikit-hubness.readthedocs.io/en/latest/documentation/concepts.html
 import numpy as np
 import pandas as pd
 import skhubness
@@ -27,7 +28,7 @@ hub_mp = Hubness(k=10, metric='cosine',
                  hubness='mp')
 hub_ls = Hubness(k=10, metric='cosine',
                  hubness='ls')
-hub_dsl = Hubness(k=10, metric='cosine',
+hub_dsl = Hubness(k=10, metric='euclidean',
                  hubness='dsl')
 hub_mp.fit(satija)
 hub_ls.fit(satija)

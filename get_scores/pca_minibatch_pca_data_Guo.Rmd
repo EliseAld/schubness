@@ -1,0 +1,36 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(Seurat)
+library(ggplot2)
+data_in <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/GSE99254_NSCLC.TCell.S9055.count.labeled.pca_readyforhubness.txt"
+data_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/GSE99254_NSCLC.TCell.S9055.count.labeled.pca_minibatch_pca_readyforhubness.txt"
+```
+
+```{r do the minibatch}
+data <- read.table(data_in) # 9047 x 9047
+seurat <- CreateSeuratObject(data)
+seurat[["percent.mt"]] <- PercentageFeatureSet(seurat, pattern = "^MT-")
+VlnPlot(seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
+FeatureScatter(seurat, feature1 = "nFeature_RNA", feature2 = "nCount_RNA") + 
+  geom_vline(xintercept=7500) +
+  geom_hline(yintercept=35e+05)
+# Remove cells with more than 7500 genes or 35e+05 total counts
+seurat <- subset(seurat, subset = nFeature_RNA<7500 & nCount_RNA<35e+05)
+# 9047 cells for Guo
+# Normalize + log transfo + scale
+seurat <- NormalizeData(seurat)
+seurat <- ScaleData(seurat)
+seurat <- RunPCA(seurat, features=rownames(seurat))
+ElbowPlot(seurat, ndims=50)
+data <- GetAssayData(seurat)
+rm(seurat)
+# PCA
+pca <- prcomp(data)
+data_proj <- t(pca$rotation)
+# 9047 PCs x 9047 cells for Guo
+write.table(data_proj, file=data_out)
+```
