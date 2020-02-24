@@ -7,7 +7,7 @@ output: html_document
 library(Seurat)
 library(ggplot2)
 data_in <- "/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/Guo_lung_2018/GSE99254_NSCLC.TCell.S9055.count.labeled.txt"
-data_out <- "/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/GSE99254_NSCLC.TCell.S9055.count.labeled.pca_readyforhubness.txt"
+data_out <- "/Users/elise/Desktop/Thèse/Calcsub/tmp_zela/ML/hubness/GSE99254_NSCLC.TCell.S9047.count.labeled.pca_readyforhubness.txt"
 ```
 
 ```{r do PCA}
@@ -24,8 +24,8 @@ seurat <- subset(seurat, subset = nFeature_RNA<7500 & nCount_RNA<35e+05)
 # Normalize + log transfo + scale
 seurat <- NormalizeData(seurat)
 seurat <- ScaleData(seurat)
-seurat <- RunPCA(seurat, features=rownames(seurat))
-ElbowPlot(seurat, ndims=50)
+#seurat <- RunPCA(seurat, features=rownames(seurat))
+#ElbowPlot(seurat, ndims=50)
 data <- GetAssayData(seurat)
 rm(seurat)
 # PCA

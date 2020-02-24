@@ -6,12 +6,40 @@ output: html_document
 ```{r libs & paths}
 library(Seurat)
 library(ggplot2)
+library(bigSCale)
+library(Matrix)
 data_in <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/GSE99254_NSCLC.TCell.S9055.count.labeled.pca_readyforhubness.txt"
-data_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/GSE99254_NSCLC.TCell.S9055.count.labeled.pca_minibatch_pca_readyforhubness.txt"
+data_icell <- "/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/Guo_lung_2018/GSE99254_NSCLC.TCell.S9055.count.labeled.txt"
+data_sparse <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/GSE99254_NSCLC.TCell.S9047.count.labeled.mtx"
+data_icell_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/GSE99254_NSCLC.TCell.S9047.count.labeled.icell.txt"
+data_out_icell <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/GSE99254_NSCLC.TCell.S9047.count.labeled.icell_pca_readyforhubness.txt"
 ```
 
-```{r do the minibatch}
+```{r do the minibatch - merging together cells close in dist and kNN graph}
 data <- read.table(data_in) # 9047 x 9047
+library(FNN)
+k=100
+kNNG <- get.knn(t(data), k=k)
+
+percent_overlap = 5
+to_merge <- list()
+for (cell in 1:ncol(data)) {
+  to_merge[[as.character(cell)]] <- as.character(cell)
+  for (neighbor in 1:k) {
+    if (kNNG$nn.dist[cell,neighbor] <= (max(kNNG$nn.dist)+min(kNNG$nn.dist))/2) {
+      if (cell%%100==0 & neighbor%%10==0) {
+        print(cell)
+      }
+      cell_neighbor <- kNNG$nn.index[cell,]
+      neighbor_neighbor <- kNNG$nn.index[neighbor,]
+      enough_overlap <- length(intersect(cell_neighbor,neighbor_neighbor))/k*100 >= percent_overlap
+      to_merge[[as.character(cell)]] <- ifelse(enough_overlap,
+                                             c(to_merge[[as.character(cell)]],as.character(neighbor)),
+                                             to_merge[[as.character(cell)]])
+    }
+  }
+}
+
 seurat <- CreateSeuratObject(data)
 seurat[["percent.mt"]] <- PercentageFeatureSet(seurat, pattern = "^MT-")
 VlnPlot(seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
@@ -34,3 +62,40 @@ data_proj <- t(pca$rotation)
 # 9047 PCs x 9047 cells for Guo
 write.table(data_proj, file=data_out)
 ```
+
+```{r do the minibatch - pseudo bulk with small clusters (max 10 cells eg)}
+
+```
+
+```{r do the minibatch - iCell from bigSCale2}
+# https://github.com/iaconogi/bigSCale2#bigscale-2-icells
+# load raw count matrix
+data <- read.table(data_icell) # 23370 x 9055
+nFeature <- apply(data,2,function(x) sum(x!=0))
+nCount <- apply(data,2,sum)
+# Remove cells with more than 7500 genes or 35e+05 total counts
+data <- data[,nFeature<7500 & nCount<35e+05] # 9047 cells for Guo
+# MTX format
+mat <- writeMM(Matrix(as.matrix(data), sparse = T), file = data_sparse)
+
+# Reduce the size of the data by ca 50%
+data_pooled <- iCells(data_sparse, target.cells = 5000)
+rownames(data_pooled$icell.mat) <- rownames(data)
+data_pooled <- data_pooled$icell.mat
+colnames(data_pooled) <- 1:ncol(data_pooled)
+```
+
+```{r re do the PCA}
+seurat <- CreateSeuratObject(data_pooled)
+# Normalize + log transfo + scale
+seurat <- NormalizeData(seurat)
+seurat <- ScaleData(seurat)
+data_pooled <- GetAssayData(seurat)
+rm(seurat)
+# PCA
+pca <- prcomp(data_pooled)
+data_proj <- t(pca$rotation)
+# 4519 PCs x 4519 metacells for Guo
+write.table(data_proj, file=data_out_icell)
+```
+

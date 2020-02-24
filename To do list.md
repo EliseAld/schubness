@@ -9,8 +9,8 @@ JB
 
 EA
 ---------
-- Quasi uniform distribution for hubness calibration
 - Various plots
+:white_check_mark:
 - Toolbox to define 'global' hubness : looks like the most appropriate are skewness, antihubs, maybe MAD ?
 :white_check_mark:
 - Hub position in tSNE/UMAP/PCA space
@@ -20,5 +20,6 @@ EA
 - Get Smartseq/10X data (done on Guo http://lung.cancer-pku.cn/ and Satija GSE100866)
 :white_check_mark:
 - Transcriptome comparison
+:white_check_mark:
 - Remove hubs
 - scikit-hubness
