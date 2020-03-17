@@ -9,5 +9,6 @@
 *.Rhistory
 *.csv
 *.tsv
-*.gz
+*.csv.gz
+*.mtx.gz
 .ipynb_checkpoints
