@@ -1,0 +1,110 @@
+---
+title: "hub neighbors characteristics -Guo"
+output: html_document
+---
+
+```{r load data, include = FALSE}
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_Guo.R")
+#source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_Satija.R")
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_Guo.R")
+#source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_Satija.R")
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_functions.R")
+```
+
+```{r get the hubs with the different methods, include = FALSE}
+parameter <- data.frame(200,100,2)
+names(parameter) <- c("k","pc","p")
+val <- hubness$score[hubness$k==parameter$k & hubness$Dimension==parameter$pc & hubness$p==parameter$p]
+thd2 <- get_hub2(hubness,kval=parameter$k,pcval=parameter$pc,pval=parameter$p)$Threshold
+hub2 <- colnames(data)[val>=thd2]
+hub6 <- colnames(data)[val==0]
+thd7 <- get_hub7(hubness,kval=parameter$k,pcval=parameter$pc,pval=parameter$p)$Threshold
+hub7 <- colnames(data)[val>=thd7]
+```
+
+```{r get neighbors, include = FALSE}
+k_max=100
+neighbors <- readRDS(path_neighbors)
+rm(path_neighbors)
+neighbor_list <- neighbors$index
+rownames(neighbor_list) <- names(hubness_scores_data[[1]][[1]])
+```
+
+```{r measure stemID entropy, include = FALSE}
+sc <- SCseq(data)
+sc@ndata <- data
+ltr <- Ltree(sc)
+ltr <- compentropy(ltr)
+stemID <- ltr@entropy
+rm(sc,ltr)
+```
+
+```{r prep Seurat, include = FALSE}
+seurat <- CreateSeuratObject(data)
+seurat$hub2 <- c("normal","hub")[factor(colnames(seurat) %in% hub2, levels = c("FALSE","TRUE"))]
+seurat$hub6 <- c("normal","antihub")[factor(colnames(seurat) %in% hub6, levels = c("FALSE","TRUE"))]
+seurat$hub7 <- c("normal","hub")[factor(colnames(seurat) %in% hub7, levels = c("FALSE","TRUE"))]
+seurat$scentropy <- entropy
+seurat$stemID <- stemID
+seurat$dropout <- apply(data, 2, function(x) {sum(x==0)/length(x)})
+rm(entropy,stemID)
+rb_gene <- c("^RPS","^RPL","^MRPS","^MRPL")
+seurat[["percent.rb"]] <- PercentageFeatureSet(seurat,
+                                               features = unlist(lapply(rb_gene, function(x) {
+                                                 grep(x,rownames(seurat),value=T)})))
+seurat[["percent.mt"]] <- PercentageFeatureSet(seurat, pattern = "^MT-")
+VlnPlot(seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
+# Normalize + log transfo + scale
+seurat <- NormalizeData(seurat)
+seurat <- ScaleData(seurat)
+seurat <- FindVariableFeatures(seurat)
+seurat <- RunPCA(seurat, verbose = F)
+seurat <- RunUMAP(seurat, dims = 1:50)
+seurat <- RunTSNE(seurat, dims = 1:50)
+```
+
+```{r visualise the neighbors}
+n_hub = 500
+k = 100
+hub_scores <- hubness$score[hubness$Dimension==(cell_nb-1) & hubness$p==2 & hubness$k==k]
+names(hub_scores) <- colnames(seurat)
+k_neighbors <- colnames(seurat)[unique(unlist(as.list(neighbor_list[order(hub_scores, decreasing  =T)[1:n_hub],])))]
+seurat$connection <- ifelse(colnames(seurat) %in% k_neighbors, "connected", "free")
+
+print(paste0(length(k_neighbors),
+             " cells are connected to hubs, i.e. ",
+             floor(length(k_neighbors)/ncol(seurat)*100),
+             "% of the total cells"))
+DimPlot(seurat, group.by = "connection", reduction = "umap")
+```
+
+```{r QC metrics}
+# nFeature/nCount
+ggarrange(FeaturePlot(seurat,"nFeature_RNA"),
+          FeaturePlot(seurat,"nCount_RNA"))
+ggarrange(vlnplot_hub_spec_connect(seurat,"nFeature_RNA","connection",0,4200,4100),
+          vlnplot_hub_spec_connect(seurat, "nCount_RNA", "connection",0,15000,14900))
+# Dropout rate
+FeaturePlot(seurat,"dropout")
+vlnplot_hub_spec_connect(seurat,"dropout","connection",0.8,1.05,1.02)
+# Percentage of mito/ribo
+ggarrange(FeaturePlot(seurat,"percent.mt"),
+          FeaturePlot(seurat,"percent.rb"))
+ggarrange(vlnplot_hub_spec_connect(seurat, "percent.mt", "connection",0,26,25),
+          vlnplot_hub_spec_connect(seurat, "percent.rb", "connection",0,55,54))
+```
+
+```{r entropy}
+# scEntropy
+FeaturePlot(seurat, reduction = "umap", features = "scentropy")
+ggarrange(vlnplot_hub_spec(seurat, "scentropy", "hub2",2.6,3.6,3.5),
+          vlnplot_hub_spec(seurat, "scentropy", "hub6",2.6,3.6,3.5),
+          vlnplot_hub_spec(seurat, "scentropy", "hub7",2.6,3.6,3.5))
+# stemID
+FeaturePlot(seurat, reduction = "umap", features = "stemID")
+ggarrange(vlnplot_hub_spec(seurat, "stemID", "hub2",0.1,0.95,0.85),
+          vlnplot_hub_spec(seurat, "stemID", "hub6",0.1,0.95,0.85),
+          vlnplot_hub_spec(seurat, "stemID", "hub7",0.1,0.95,0.85))
+```
+

@@ -1,0 +1,108 @@
+---
+title: "Looking at QC metrics -Satija"
+output:
+  html_document: default
+  pdf_document: default
+---
+Method 2 : mu + 3sigma (k=200)
+Method 6 : anti hubs
+Method 7 : MAD (k=200)
+
+```{r load data, include = FALSE}
+#source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_Guo.R")
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_Satija.R")
+#source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_Guo.R")
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_Satija.R")
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_functions.R")
+```
+
+```{r get the hubs with the different methods, include = FALSE}
+parameter <- data.frame(200,100,2)
+names(parameter) <- c("k","pc","p")
+val <- hubness$score[hubness$k==parameter$k & hubness$Dimension==parameter$pc & hubness$p==parameter$p]
+thd2 <- get_hub2(hubness,kval=parameter$k,pcval=parameter$pc,pval=parameter$p)$Threshold
+hub2 <- colnames(data)[val>=thd2]
+hub6 <- colnames(data)[val==0]
+thd7 <- get_hub7(hubness,kval=parameter$k,pcval=parameter$pc,pval=parameter$p)$Threshold
+hub7 <- colnames(data)[val>=thd7]
+```
+
+```{r prep Seurat, include=FALSE}
+seurat <- CreateSeuratObject(data)
+seurat$hub2 <- c("normal","hub")[factor(colnames(seurat) %in% hub2, levels = c("FALSE","TRUE"))]
+seurat$hub6 <- c("normal","antihub")[factor(colnames(seurat) %in% hub6, levels = c("FALSE","TRUE"))]
+seurat$hub7 <- c("normal","hub")[factor(colnames(seurat) %in% hub7, levels = c("FALSE","TRUE"))]
+seurat[["percent.mt"]] <- PercentageFeatureSet(seurat, pattern = "^MT-")
+VlnPlot(seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
+FeatureScatter(seurat, feature1 = "nFeature_RNA", feature2 = "nCount_RNA")
+# Remove cells with more than 7500 genes or 3e+06 total counts for Guo
+#seurat <- subset(seurat, subset = nFeature_RNA<7500 & nCount_RNA<3e+06) # 9047 cells
+#VlnPlot(seurat, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
+# Normalize + log transfo + scale
+library(ggpubr)
+seurat <- NormalizeData(seurat)
+seurat <- ScaleData(seurat)
+seurat <- FindVariableFeatures(seurat)
+seurat <- RunPCA(seurat, verbose = F)
+seurat <- RunUMAP(seurat, dims = 1:50)
+seurat <- RunTSNE(seurat, dims = 1:50)
+```
+
+```{r position in various spaces}
+plot_pca <- DimPlot(seurat, reduction = "pca",
+                    group.by = "FACS", 
+                    pt.size = 3)
+plot_umap <- DimPlot(seurat, reduction = "umap",
+                     group.by = "FACS",
+                     pt.size = 3)
+plot_tsne <- DimPlot(seurat, reduction = "tsne", 
+                     group.by = "FACS",
+                     pt.size = 3)
+ggarrange(plot_pca, plot_umap, plot_tsne)
+ggarrange(plot_hub(seurat,red="pca",hubs=hub2),
+          plot_hub(seurat,red="umap",hubs=hub2),
+          plot_hub(seurat,red="tsne",hubs=hub2))
+ggarrange(plot_hub(seurat,red="pca",hubs=hub7),
+          plot_hub(seurat,red="umap",hubs=hub7),
+          plot_hub(seurat,red="tsne",hubs=hub7))
+ggarrange(plot_hub(seurat,red="pca",hubs=hub6),
+          plot_hub(seurat,red="umap",hubs=hub6),
+          plot_hub(seurat,red="tsne",hubs=hub6))
+```
+
+```{r nFeature/nCount of hubs/anti hubs vs normal cells}
+ggarrange(vlnplot_hub_spec(seurat, "nFeature_RNA", "hub2"),
+          vlnplot_hub_spec(seurat, "nFeature_RNA", "hub6"),
+          vlnplot_hub_spec(seurat, "nFeature_RNA", "hub7"))
+ggarrange(vlnplot_hub_spec(seurat, "nCount_RNA", "hub2"),
+          vlnplot_hub_spec(seurat, "nCount_RNA", "hub6"),
+          vlnplot_hub_spec(seurat, "nCount_RNA", "hub7"))
+
+histoplot_hub_spec(seurat, seurat$nFeature_RNA, "nFeature", seurat$hub2)
+histoplot_hub_spec(seurat, seurat$nFeature_RNA, "nFeature", seurat$hub6)
+histoplot_hub_spec(seurat, seurat$nFeature_RNA, "nFeature", seurat$hub7)
+
+histoplot_hub_spec(seurat, seurat$nCount_RNA, "nCount", seurat$hub2)
+histoplot_hub_spec(seurat, seurat$nCount_RNA, "nCount", seurat$hub6)
+histoplot_hub_spec(seurat, seurat$nCount_RNA, "nCount", seurat$hub7)
+```
+
+```{r dropout rate of hubs/antihubs}
+seurat$dropout <- apply(data, 2, function(x) {sum(x==0)/length(x)})
+ggarrange(vlnplot_hub_spec(seurat, "dropout", "hub2"),
+          vlnplot_hub_spec(seurat, "dropout", "hub6"),
+          vlnplot_hub_spec(seurat, "dropout", "hub7"))
+```
+
+```{r look @ mito/ribo genes}
+seurat[["percent.ribo"]] <- PercentageFeatureSet(seurat, pattern = c("^RPS","^RPL"))
+ggarrange(vlnplot_hub_spec(seurat, "percent.mt", "hub2"),
+          vlnplot_hub_spec(seurat, "percent.mt", "hub6"),
+          vlnplot_hub_spec(seurat, "percent.mt", "hub7"))
+ggarrange(vlnplot_hub_spec(seurat, "percent.ribo", "hub2"),
+          vlnplot_hub_spec(seurat, "percent.ribo", "hub6"),
+          vlnplot_hub_spec(seurat, "percent.ribo", "hub7"))
+# all same for Satija ..
+```
+

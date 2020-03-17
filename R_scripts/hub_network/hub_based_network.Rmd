@@ -1,0 +1,38 @@
+---
+title: "hub-based network building -Guo"
+output: html_document
+---
+
+```{r load data, include = FALSE}
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_Guo.R")
+#source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_Satija.R")
+hubness$cellID <- names(hubness_scores_data[[1]][[1]])
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_Guo.R")
+#source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_Satija.R")
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_functions.R")
+```
+
+```{r get neighbors}
+k_max=100
+#neighbors <- findKNN(t(data), k_max)
+#saveRDS(neighbors,file=path_neighbors)
+neighbors <- readRDS(path_neighbors)
+neighbor_list <- neighbors$index
+rownames(neighbor_list) <- names(hubness_scores_data[[1]][[1]])
+```
+
+```{r get all the data fixing the nb of hubs but increasing the neighborhood size}
+hub_scores <- hubness$score[hubness$Dimension==(cell_nb-1) & hubness$p==2 & hubness$k==50]
+names(hub_scores) <- names(hubness_scores_data[[1]][[1]])
+coverage_hub(neighbor_list, hub_scores, 100)
+```
+
+```{r get all the data fixing the neighborhood size but increasing the nb of hubs}
+k=100
+hub_scores <- hubness$score[hubness$Dimension==(cell_nb-1) & hubness$p==2 & hubness$k==50]
+names(hub_scores) <- names(hubness_scores_data[[1]][[1]])
+coverage_k(neighbor_list, hub_scores, k)
+```
+

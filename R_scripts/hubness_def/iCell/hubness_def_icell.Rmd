@@ -1,0 +1,647 @@
+---
+title: "How to define hubs after icell?"
+output:
+  html_document: default
+  pdf_document: default
+---
+Method 1 : using the max, sensitive to outliers NO
+
+Method 2 : mu + 3sigma (mu + sigma), mu is also sensitive to outliers NO
+
+Method 3 : 2k, very strange NO
+
+Method 4 : skewness, appropriate YES
+
+Method 5 : mu + 3sigma_left (mu + sigma_left)
+
+Method 6 : anti hubs, appropriate YES
+
+Method 7 : 3MAD (MAD), maybe ? but median values are sometimes equal to zero...
+
+Method 8 : mode + 3sigma (mode + sigma)
+
+```{r libs, results="hide", include = FALSE}
+library(philentropy, quietly = T)
+library(ggplot2, quietly = T)
+library(viridis, quietly = T)
+library(ggridges, quietly = T)
+library(scales, quietly = T)
+library(ggpubr, quietly = T)
+```
+
+```{r functions, include = FALSE}
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hubness_load_write_icell_data.R")
+
+get_hub1 <- function(df,kval,pcval,pval) { # Maximum hubness score
+   max = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            max = c(max, max(val))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=max,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+plot_thd <- function(df,hub_val,p) {
+  plt <- ggplot(hubness, aes(x = score, y = Dimension, fill = Dimension))
+  plt + geom_density_ridges() +
+      theme_ridges() +
+      xlab("Hubness score") +
+      ylab("Dimension of the input space") +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==9047,], colour=hue_pal()(9)[9], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5000,], colour=hue_pal()(9)[8], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==1000,], colour=hue_pal()(9)[7], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==500,], colour=hue_pal()(9)[6], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==100,], colour=hue_pal()(9)[5], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==50,], colour=hue_pal()(9)[4], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==10,], colour=hue_pal()(9)[3], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5,], colour=hue_pal()(9)[2], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==2,], colour=hue_pal()(9)[1], inherit.aes = F) +
+      facet_wrap( ~ k) +
+      ggtitle(paste0('Hubness maximum score of Lp norm across dimensions,\np=',p))
+  
+}
+get_hub2 <- function(df,kval,pcval,pval) { # Using the mean + 3*sd from Tomasev
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            x_thd = c(x_thd, mean(val)+3*sd(val))
+            hub_nb = c(hub_nb, sum(val>=(mean(val)+3*sd(val))))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+get_hub2b <- function(df,kval,pcval,pval) { # Using the mean + sd
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            x_thd = c(x_thd, mean(val)+sd(val))
+            hub_nb = c(hub_nb, sum(val>=(mean(val)+sd(val))))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+plot_thd_txt <- function(df,hub_val,p,method_index) {
+  plt <- ggplot(hubness, aes(x = score, y = Dimension, fill = Dimension))
+  plt + geom_density_ridges() +
+      theme_ridges() +
+      xlab("Hubness score") +
+      ylab("Dimension of the input space") +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==9047,], colour=hue_pal()(9)[9], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5000,], colour=hue_pal()(9)[8], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==1000,], colour=hue_pal()(9)[7], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==500,], colour=hue_pal()(9)[6], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==100,], colour=hue_pal()(9)[5], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==50,], colour=hue_pal()(9)[4], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==10,], colour=hue_pal()(9)[3], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5,], colour=hue_pal()(9)[2], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==2,], colour=hue_pal()(9)[1], inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      facet_wrap( ~ k) +
+      ggtitle(paste0('Number of hubs with Lp norm across dimensions,\np=',p,',\nMethod ',method_index))
+  
+}
+get_hub3 <- function(df,kval,pcval,pval,log=F) { # Using the method from [1] >= 2k
+   if (log==T) {
+      hub_nb = c()
+      ymin = c()
+      ymax = c()
+      y_increment = 1
+      for (d in pcval) {
+         for (k in kval) {
+            for (p in pval) {
+               val = df$score[df$Dimension==d & df$p==p & df$k==k]
+               hub_nb = c(hub_nb, sum(val>=2*log(k)))
+               ymin = c(ymin,y_increment)
+               ymax = c(ymax,y_increment+1)
+            }
+         }
+      y_increment <- y_increment+1
+      }
+   }
+   else {
+      hub_nb = c()
+      ymin = c()
+      ymax = c()
+      y_increment = 1
+      for (d in pcval) {
+         for (k in kval) {
+            for (p in pval) {
+               val = df$score[df$Dimension==d & df$p==p & df$k==k]
+               hub_nb = c(hub_nb, sum(val>=2*k))
+               ymin = c(ymin,y_increment)
+               ymax = c(ymax,y_increment+1)
+            }
+         }
+      y_increment <- y_increment+1
+      }
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   hub_val$Threshold <- 2*hub_val$k
+   return(hub_val)
+}
+get_hub4 <- function(df,kval,pcval,pval) { # skewness
+   s = c()
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            s = c(s, mean((val-mean(val))^3)/sd(val)^3)
+         }
+      }
+   }
+   skewness_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=s)
+   skewness_val$Dimension <- factor(skewness_val$Dimension, levels = pcval)
+   return(skewness_val)
+}
+plot_evol_pval <- function(hub_val,method_name,label.y) {
+  ggplot(hub_val, aes(x=factor(Dimension), y=GHubness, color=factor(p))) +
+   geom_point() +
+   ylab(label.y) +
+   xlab("Dimension") +
+   geom_line(aes(group=p),linetype='dotted') +
+   ggtitle(method_name) +
+   facet_wrap(~k)
+}
+plot_evol_pcval <- function(hub_val,method_name,label.y) {
+  ggplot(hub_val, aes(x=factor(p), y=GHubness, color=factor(Dimension))) +
+   geom_point() +
+   ylab(label.y) +
+   xlab("p") +
+   geom_line(aes(group=Dimension),linetype='dotted') +
+   ggtitle(method_name) +
+   facet_wrap(~k)
+}
+get_hub5 <- function(df,kval,pcval,pval) { # mu + 3 sigma_left
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            mu = mean(val)
+            left_val = val[val<=mu]
+            mirror_val = c(left_val,2*mu-left_val)
+            left_sigma = sd(mirror_val)
+            x_thd = c(x_thd,mu+3*left_sigma)
+            hub_nb = c(hub_nb, sum(val>=(mu+3*left_sigma)))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+get_hub5b <- function(df,kval,pcval,pval) { # mu + sigma_left
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            mu = mean(val)
+            left_val = val[val<=mu]
+            mirror_val = c(left_val,2*mu-left_val)
+            left_sigma = sd(mirror_val)
+            x_thd = c(x_thd,mu+left_sigma)
+            hub_nb = c(hub_nb, sum(val>=(mu+left_sigma)))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+get_hub6 <- function(df,kval,pcval,pval) { # anti hubs
+   anti_hub = c()
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+           anti_hub = c(anti_hub,unique(df$Antihubs[df$Dimension==d & df$p==p & df$k==k]))
+         }
+      }
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=anti_hub)
+   hub_val$Dimension <- factor(hub_val$Dimension, levels = pcval)
+   return(hub_val)
+}
+get_hub7 <- function(df,kval,pcval,pval) { # median + 3MAD
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+           val = df$score[df$Dimension==d & df$p==p & df$k==k]
+           x_thd = c(x_thd, median(val)+3*mad(val,
+                                              #center=ifelse(median(val)!=0,median(val),1)
+                                              ))
+           hub_nb = c(hub_nb, sum(val>=(median(val)+3*mad(val,
+                                                          #center=ifelse(median(val)!=0,median(val),1)
+                                                          ))))
+           ymin = c(ymin,y_increment)
+           ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+get_hub7b <- function(df,kval,pcval,pval) { # median + MAD
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+           val = df$score[df$Dimension==d & df$p==p & df$k==k]
+           x_thd = c(x_thd, median(val)+mad(val,
+                                              #center=ifelse(median(val)!=0,median(val),1)
+                                              ))
+           hub_nb = c(hub_nb, sum(val>=(median(val)+mad(val,
+                                                          #center=ifelse(median(val)!=0,median(val),1)
+                                                          ))))
+           ymin = c(ymin,y_increment)
+           ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+Mode <- function(x) { # get the mode of a distribution
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+get_hub8 <- function(df,kval,pcval,pval) { # mode + 3 sigma_left
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            mode = Mode(val)
+            x_thd = c(x_thd,mode+3*sd(val))
+            hub_nb = c(hub_nb, sum(val>=(mode+3*sd(val))))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+get_hub8b <- function(df,kval,pcval,pval) { # mode + sigma_left
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            mode = Mode(val)
+            x_thd = c(x_thd,mode+sd(val))
+            hub_nb = c(hub_nb, sum(val>=(mode+sd(val))))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+
+get_hub_comp <- function(df,kval,pcval,p1,p2,method) { # Summary plot for the max comparison between two Lp norms
+   hub1 = method(df,kval,pcval,p1)$GHubness
+   hub2 = method(df,kval,pcval,p2)$GHubness
+   hub_comp_val <- data.frame("p1"=p1,
+                              "p2"=p2,
+                              "k"=kval,
+                              "Dimension"=rep(pcval,each=length(kval)),
+                              "GHubness1"=hub1,
+                              "GHubness2"=hub2,
+                              "Difference_amplitude"=hub2-hub1)
+   return(hub_comp_val)
+}
+```
+
+```{r comp get_hub1, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_max_list <- lapply(p_val_test, function(x) get_hub1(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_max_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_max_list, y=p_val_test, FUN=function(x,y) {plot_thd(hubness, x, y)}), common.legend = T, legend = "right")
+```
+
+```{r comp get_hub2 & 2b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_musig_list <- lapply(p_val_test, function(x) get_hub2(hubness, kval=kval,pcval=pcval,pval=x))
+hub_musigb_list <- lapply(p_val_test, function(x) get_hub2b(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_musig_list) <- p_val_test
+names(hub_musigb_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_musig_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "2")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_musigb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "2b")}), common.legend = T, legend = "right")
+```
+
+```{r comp get_hub3, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_2k_list <- lapply(p_val_test, function(x) get_hub3(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_2k_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_2k_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "3")}), common.legend = T, legend = "right")
+```
+
+```{r comp get_hub4, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_skewness_list <- lapply(p_val_test, function(x) get_hub4(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_skewness_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_skewness_list, y=p_val_test, FUN=function(X,y) {plot_evol_pval(X,method_name=paste0("Skewness, p=",y), label.y="Skewness")}), common.legend = T, legend = "right")
+```
+
+```{r comp get_hub5 & 5b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_musigleft_list <- lapply(p_val_test, function(x) get_hub5(hubness, kval=kval,pcval=pcval,pval=x))
+hub_musigleftb_list <- lapply(p_val_test, function(x) get_hub5b(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_musigleft_list) <- p_val_test
+names(hub_musigleftb_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_musigleft_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "5")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_musigleftb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "5b")}), common.legend = T, legend = "right")
+```
+
+```{r comp get_hub6, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+hub_antihub <- get_hub6(hubness, kval=kval,pcval=pcval,pval=c(0.1,1,2))
+plot_evol_pcval(hub_antihub,method_name = "Antihubs", label.y="Antihubs")
+
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_antihub_list <- lapply(p_val_test, function(x) get_hub6(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_antihub_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_antihub_list, y=p_val_test, FUN=function(X,y) {plot_evol_pval(X, method_name=paste0("Antihubs, p=",y), label.y = "Antihubs")}), common.legend = T, legend = "right")
+```
+
+```{r comp get_hub7 & 7b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_mad_list <- lapply(p_val_test, function(x) get_hub7(hubness, kval=kval,pcval=pcval,pval=x))
+hub_madb_list <- lapply(p_val_test, function(x) get_hub7b(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_mad_list) <- p_val_test
+names(hub_madb_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_mad_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "MAD")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_madb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "MADb")}), common.legend = T, legend = "right")
+```
+
+```{r comp get_hub8 & 8b, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=15}
+# Test p values
+p_val_test <- c(0.1,1,2,4)
+hub_mode_list <- lapply(p_val_test, function(x) get_hub8(hubness, kval=kval,pcval=pcval,pval=x))
+hub_modeb_list <- lapply(p_val_test, function(x) get_hub8b(hubness, kval=kval,pcval=pcval,pval=x))
+names(hub_mode_list) <- p_val_test
+names(hub_modeb_list) <- p_val_test
+
+# Viz
+ggarrange(plotlist = lapply(X=hub_mode_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "mode")}), common.legend = T, legend = "right")
+ggarrange(plotlist = lapply(X=hub_modeb_list, y=p_val_test, FUN=function(X,y) {plot_thd_txt(hubness, X, y, "modeb")}), common.legend = T, legend = "right")
+```
+
+```{r comp all, get_hub1, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_max <- get_hub1(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_max, "Maximum score across Lp norms","Maximum hubness score")
+plot_evol_pval(hub_max, "Maximum score across dimensions","Maximum hubness score")
+```
+
+```{r comp all, get_hub2, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_musig <- get_hub2(hubness, kval=kval,pcval=pcval,pval=pval)
+hub_musigb <- get_hub2b(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_musig, expression(paste("Global hubness defined by cells with a score above ",mu,"+3",sigma," across Lp norms")),"Hubs count")
+plot_evol_pval(hub_musig, expression(paste("Global hubness defined by cells with a score above ",mu,"+3",sigma," across dimensions")),"Hubs count")
+plot_evol_pcval(hub_musigb, expression(paste("Global hubness defined by cells with a score above ",mu,"+",sigma," across Lp norms")),"Hubs count")
+plot_evol_pval(hub_musigb, expression(paste("Global hubness defined by cells with a score above ",mu,"+",sigma," across dimensions")),"Hubs count")
+```
+
+```{r comp all, get_hub3, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_2k <- get_hub3(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_2k, "Global hubness defined by cells with a score above 2k, across Lp norms","Hubs count")
+plot_evol_pval(hub_2k, "Global hubness defined by cells with a score above 2k, across dimensions","Hubs count")
+```
+
+```{r comp all, get_hub4, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_skewness <- get_hub4(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_skewness, "Skewness across Lp norms","Skewness")
+plot_evol_pval(hub_skewness, "Skewness across dimensions","Skewness")
+```
+
+```{r comp all, get_hub5, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_musigleft <- get_hub5(hubness, kval=kval,pcval=pcval,pval=pval)
+hub_musigleftb <- get_hub5b(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_musigleft, expression(paste("Global hubness defined by cells with a score above ",mu,"+3",sigma,"_l across Lp norms")),"Hubs count")
+plot_evol_pval(hub_musigleft, expression(paste("Global hubness defined by cells with a score above ",mu,"+3",sigma,"_l across dimensions")),"Hubs count")
+plot_evol_pcval(hub_musigleftb, expression(paste("Global hubness defined by cells with a score above ",mu,"+",sigma,"_l across Lp norms")),"Hubs count")
+plot_evol_pval(hub_musigleftb, expression(paste("Global hubness defined by cells with a score above ",mu,"+",sigma,"_l across dimensions")),"Hubs count")
+```
+
+```{r comp all, get_hub6, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_antihub <- get_hub6(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_antihub, "Antihub occurence across Lp norms","Antihubs count")
+plot_evol_pval(hub_antihub, "Antihub occurence across dimensions","Antihubs count")
+```
+
+```{r comp all, get_hub7, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_mad <- get_hub7(hubness, kval=kval,pcval=pcval,pval=pval)
+hub_madb <- get_hub7b(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_mad, "Global hubness defined by cells with a score above median+3MAD across Lp norms","Hubs count")
+plot_evol_pval(hub_mad, "Global hubness defined by cells with a score above median+3MAD across dimensions","Hubs count")
+plot_evol_pcval(hub_madb, "Global hubness defined by cells with a score above median+MAD across Lp norms","Hubs count")
+plot_evol_pval(hub_madb, "Global hubness defined by cells with a score above median+MAD across dimensions","Hubs count")
+```
+
+```{r comp all, get_hub8, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+hub_mode <- get_hub8(hubness, kval=kval,pcval=pcval,pval=pval)
+hub_modeb <- get_hub8b(hubness, kval=kval,pcval=pcval,pval=pval)
+
+# Viz
+plot_evol_pcval(hub_mode, expression(paste("Global hubness defined by cells with a score above mode+3",sigma," across Lp norms")),"Hubs count")
+plot_evol_pval(hub_mode, expression(paste("Global hubness defined by cells with a score above mode+3",sigma," across dimensions")),"Hubs count")
+plot_evol_pcval(hub_modeb, expression(paste("Global hubness defined by cells with a score above mode+",sigma," across Lp norms")),"Hubs count")
+plot_evol_pval(hub_modeb, expression(paste("Global hubness defined by cells with a score above mode+",sigma," across dimensions")),"Hubs count")
+```
+
+```{r comp all, get_hub_comp, echo=FALSE, message=FALSE, warning=FALSE, fig.height=7, fig.width=7}
+# Merge the dfs
+#p1 <- 1
+#p2 <- 2
+#difference <- get_hub_comp(hubness, kval=kval,pcval=pcval,p1=p1,p2=p2)
+#difference_log <- get_hub_comp(hubness_log, kval=kval,pcval=pcval,p1=p1,p2=p2)
+
+# Viz
+#ggplot(difference, aes(x=factor(Dimension), y=Difference_amplitude, color=factor(Dimension))) +
+#   geom_bar(stat="identity", width = 1) +
+#   facet_wrap(~k)
+#ggplot(difference_log, aes(x=factor(Dimension), y=Difference_amplitude, color=factor(Dimension))) +
+#   geom_bar(stat="identity", width = 1) +
+#   facet_wrap(~k)
+```
