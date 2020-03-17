@@ -9,4 +9,5 @@
 *.Rhistory
 *.csv
 *.tsv
+*.gz
 .ipynb_checkpoints
