@@ -112,6 +112,11 @@ vlnplot_hub_spec_connect <- function(seurat, feature, group.by, ylim_inf, ylim_s
     ylim(ylim_inf,ylim_sup)
 }
 
+ks_test <- function(seurat, feature, group.by, group1, group2) {
+  x<-seurat$feature[seurat$group.by==group1]
+  y<-seurat$feature[seurat$group.by==group2]
+}
+
 coverage_random_hub <- function(neighbor_list, random_cell_nb) {
   cell_randomized <- sample(rownames(neighbor_list),nrow(neighbor_list))
   random_cells <- cell_randomized[1:random_cell_nb]
@@ -133,44 +138,81 @@ coverage_hub <- function(neighbor_list, hub_scores, hub_nb) {
     coverage <- c(coverage, length(unique(unlist(as.list(neighbor_list[hubs,1:k])))))
   }
   coverage_rdm <- coverage_random_hub(neighbor_list, hub_nb)
-  plot(seq(5,k,5),coverage, ylim=c(0,length(hub_scores)),
+  plot(seq(5,k,5),coverage/cell_nb*100, ylim=c(0,100),
        pch=16,
        xlab="Neighborhood size",
+       ylab="Coverage (%)",
        main=paste0("Coverage of the data with ",hub_nb," hubs"))
-  points(seq(5,coverage_rdm$k,5),coverage_rdm$coverage, col="lightblue", pch=3)
-  abline(h=length(hub_scores)*0.9, col='red', lty='dashed')
+  points(seq(5,coverage_rdm$k,5),coverage_rdm$coverage/cell_nb*100, col="lightblue", pch=3)
+  abline(h=90, col='red', lty='dashed')
   abline(v=k, col="red", lty="dashed")
   abline(v=coverage_rdm$k, col="lightblue", lty="dotted")
 }
 coverage_random_k <- function(neighbor_list, k) {
-  random_cell_nb <- 1
+  random_cell_nb <- 10
   cell_randomized <- sample(rownames(neighbor_list),nrow(neighbor_list))
   random_cells <- cell_randomized[1:random_cell_nb]
   coverage <- length(unique(unlist(as.list(neighbor_list[random_cells,1:k]))))
-  while (coverage[random_cell_nb] < cell_nb*0.9 & random_cell_nb < 1000) {
-    random_cell_nb <- random_cell_nb+1
+  while (coverage[random_cell_nb/10] < cell_nb*0.9 & random_cell_nb < 1000) {
+    random_cell_nb <- random_cell_nb+10
     random_cells <- cell_randomized[1:random_cell_nb]
     coverage <- c(coverage, length(unique(unlist(as.list(neighbor_list[random_cells,1:k])))))
   }
   return(list(coverage=coverage,random_cell_nb=random_cell_nb))
 }
 coverage_k <- function(neighbor_list, hub_scores, k) {
-  cell_scores_sorted <- names(sort(hub_scores, decreasing  =T))
-  hub_nb <- 1
+  cell_scores_sorted <- names(sort(hub_scores, decreasing=T))
+  hub_nb <- 10
   hubs <- cell_scores_sorted[1:hub_nb]
   coverage <- length(unique(unlist(as.list(neighbor_list[hubs,1:k]))))
-  while (coverage[hub_nb] < cell_nb*0.9 & hub_nb < 1000) {
-    hub_nb <- hub_nb+1
+  while (coverage[hub_nb/10] < cell_nb*0.9 & hub_nb < 1000) {
+    hub_nb <- hub_nb+10
     hubs <- cell_scores_sorted[1:hub_nb]
     coverage <- c(coverage, length(unique(unlist(as.list(neighbor_list[hubs,1:k])))))
   }
   coverage_rdm <- coverage_random_k(neighbor_list, k)
-  plot(1:hub_nb,coverage, ylim=c(0,length(hub_scores)),
+  plot(seq(10,hub_nb,10),coverage/cell_nb*100, ylim=c(0,100),
        pch=16,
        xlab="Number of hubs",
+       ylab="Coverage (%)",
        main=paste0("Coverage of the data looking at ",k," neighbors"))
-  points(1:coverage_rdm$random_cell_nb,coverage_rdm$coverage, col="lightblue", pch=3)
-  abline(h=length(hub_scores)*0.9, col='red', lty='dashed')
+  points(seq(10,coverage_rdm$random_cell_nb,10),coverage_rdm$coverage/cell_nb*100, col="lightblue", pch=3)
+  abline(h=90, col='red', lty='dashed')
   abline(v=hub_nb, col="red", lty="dashed")
   abline(v=coverage_rdm$random_cell_nb, col="lightblue", lty="dotted")
+}
+reverse_coverage_hub <- function(neighbor_list, hub_scores, hub_nb) {
+  cell_scores_sorted <- order(hub_scores, decreasing=T)
+  hubs <- cell_scores_sorted[1:hub_nb]
+  k <- 5
+  coverage <- sum(apply(neighbor_list[,1:k],1,function(x) any(x %in% hubs)))
+  while (coverage[k/5] < cell_nb*0.9 & k < k_max) {
+    k <- k+5
+    coverage <- c(coverage, sum(apply(neighbor_list[,1:k],1,function(x) any(x %in% hubs))))
+  }
+  plot(seq(5,k,5),coverage/cell_nb*100, ylim=c(0,100),
+       pch=16,
+       xlab="Neighborhood size",
+       ylab="Reverse coverage (%)",
+       main=paste0("Reverse coverage of the data with ",hub_nb," hubs"))
+  abline(h=90, col='red', lty='dashed')
+  abline(v=k, col="red", lty="dashed")
+}
+reverse_coverage_k <- function(neighbor_list, hub_scores, k) {
+  cell_scores_sorted <- order(hub_scores, decreasing=T)
+  hub_nb <- 10
+  hubs <- cell_scores_sorted[1:hub_nb]
+  coverage <- sum(apply(neighbor_list[,1:k],1,function(x) any(x %in% hubs)))
+  while (coverage[hub_nb/10] < cell_nb*0.9 & hub_nb < 1000) {
+    hub_nb <- hub_nb+10
+    hubs <- cell_scores_sorted[1:hub_nb]
+    coverage <- c(coverage, sum(apply(neighbor_list[,1:k],1,function(x) any(x %in% hubs))))
+  }
+  plot(seq(10,hub_nb,10),coverage/cell_nb*100, ylim=c(0,100),
+       pch=16,
+       xlab="Number of hubs",
+       ylab="Reverse coverage (%)",
+       main=paste0("Coverage of the data looking at ",k," neighbors"))
+  abline(h=90, col='red', lty='dashed')
+  abline(v=hub_nb, col="red", lty="dashed")
 }

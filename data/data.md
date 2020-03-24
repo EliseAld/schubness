@@ -10,6 +10,7 @@ Labelled T cells (not all sequenced cells are labelled, only 9055 out of 12k)
 :white_check_mark:
 
 - Ewing sarcoma cell line (ask Andrei)
+:white_check_mark:
 
 10X
 -----
@@ -29,6 +30,9 @@ Public repo
 :white_check_mark:
 
 - http://imlspenticton.uzh.ch:3838/conquer/
+:white_check_mark:
+
+- https://github.com/xzhoulab/DRComparison
 :white_check_mark:
 
 - Human atlas

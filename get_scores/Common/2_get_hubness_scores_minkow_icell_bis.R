@@ -4,7 +4,7 @@ library(pbapply)
 
 # MAKE THE DIST MATRIX WITH ALL ENTRIES EXCEPT DIAG INSTEAD OF UPPER TRI
 
-matrix <- read.table("GSE99254_NSCLC.TCell.S936.count.labeled.icell2_pca_readyforhubness.txt")
+matrix <- read.table("GSE100866_CBMC_8K_13AB_10X-RNA_umi.icell_pca_readyforhubness.txt")
 print("data loaded!")
 n_cell = ncol(matrix)
 
@@ -17,7 +17,7 @@ k.val <- c(5,50,100,200)
 p.val <- c(0.1,0.5,1,1.5,2,4,10)
 
 # Range of PCs nb values
-pc.val <- c(2,5,10,50,100,500,n_cell-1)
+pc.val <- c(20,30,40)
 
 # Write the function for the kNN graph
 distance_dim <- function(data,p) {
@@ -43,7 +43,7 @@ get_scores <- function(data,k.val,p.val,pc.val) {
     for (p in p.val) {
       dist.matrix <- distance_dim(data=data_pc,p=p)
       minkow <- pbapply::pblapply(X=k.val, FUN=function(x,y,z) {k.occurence(kNN(y,x),z)}, y=dist.matrix, z=data)
-      saveRDS(minkow, file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/results/Satija/icell2/kNN_occurence_",p,"_pca",pc,"_minkow_icell2_bis.rds"))
+      saveRDS(minkow, file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/results/Satija/icell/kNN_occurence_",p,"_pca",pc,"_minkow_icell_bis.rds"))
       print(paste0(p, " pval done for PC",pc))
     }
   }

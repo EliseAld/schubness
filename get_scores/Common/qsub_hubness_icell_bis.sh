@@ -10,7 +10,7 @@
 #PBS -q batch
  
 # Information
-#PBS -N hubness_satija_data
+#PBS -N hubness_satija_icell
 #PBS -M elise.amblard@curie.fr
 #PBS -m abe
  

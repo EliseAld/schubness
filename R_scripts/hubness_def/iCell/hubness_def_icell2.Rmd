@@ -1,5 +1,5 @@
 ---
-title: "How to define hubs after icell2? Guo"
+title: "How to define hubs after icell2? Satija"
 output:
   html_document: default
   pdf_document: default
@@ -30,7 +30,7 @@ library(ggpubr, quietly = T)
 ```
 
 ```{r functions, include = FALSE}
-source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_icell2_data_Guo.R")
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_icell2_data_Satija.R")
 
 get_hub1 <- function(df,kval,pcval,pval) { # Maximum hubness score
    max = c()

@@ -1,0 +1,118 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(pbapply)
+data_in1 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx184.txt"
+data_in2 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx352.txt"
+data_in3 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx471.txt"
+data_in4 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx856.txt"
+data_in5 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx857.txt"
+data_in6 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx861.txt"
+data_in7 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx1057.txt"
+data_in8 <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/1_initial/pdx1058.txt"
+data_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/pdx_pca_readyforhubness.txt"
+raw_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/pdx_raw_merged.txt"
+sdev_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing_PDX/pdx_pca_sdev.txt"
+```
+
+```{r functions}
+load_pdx <- function(path) {
+  data <- read.table(path, header = T)
+  data <- data[!is.na(data[,1]),]
+  data <- data[!duplicated(data[,1]),]
+  rownames(data) <- data[,1]
+  data <- data[,-1]
+  data <- data[!apply(data,1,function(x) any(is.na(x))),]
+  count <- apply(data,1,function(x) sum(x!=0, na.rm = T))
+  return(data[count>2,])
+}
+filter1 <- function(df) {
+  feature <- apply(df,2,function(x) sum(x!=0, na.rm = T))
+  count <- apply(df,2,function(x) sum(x, na.rm=T))
+  print(plot(feature,count))
+}
+filter2 <- function(df, feature_thd, count_thd) {
+  feature <- apply(df,2,function(x) sum(x!=0, na.rm = T))
+  count <- apply(df,2,function(x) sum(x, na.rm=T))
+  return(df[,feature < feature_thd & count < count_thd])
+}
+make_seurat <- function(df) {
+  seurat <- CreateSeuratObject(df)
+  return(seurat)
+}
+prep_integration <- function(seurat) {
+  seurat <- NormalizeData(seurat, verbose = F)
+  seurat <- ScaleData(seurat, verbose = F)
+  seurat <- FindVariableFeatures(seurat, verbose = F)
+  return(seurat)
+}
+integration <- function(list)
+```
+
+```{r do PCA}
+data1 <- load_pdx(data_in1)
+data2 <- load_pdx(data_in2)
+data3 <- load_pdx(data_in3)
+data4 <- load_pdx(data_in4)
+data5 <- load_pdx(data_in5)
+data6 <- load_pdx(data_in6)
+data7 <- load_pdx(data_in7)
+data8 <- load_pdx(data_in8)
+data <- list(data1,data2,data3,data4,data5,data6,data7,data8)
+pblapply(data,filter1)
+feature_thd = c(5000,6000,7000,6500,7000,6000,4500,5000)
+count_thd = c(30000,50000,80000,50000,70000,60000,25000,35000)
+data <- mapply(data, feature_thd, count_thd, FUN=function(x,y,z) {filter2(x,y,z)})
+genes <- intersect(intersect(intersect(intersect(intersect(intersect(intersect(rownames(data1),rownames(data2)),
+                                                                     rownames(data3)),
+                                                           rownames(data4)),
+                                                 rownames(data5)),
+                                       rownames(data6)),
+                             rownames(data7)),
+                   rownames(data8))
+data <- pblapply(data,function(x) {x[genes,]}) #11288 genes
+rm(genes)
+seurat <- pblapply(data,make_seurat)
+rm(data)
+
+# Seurat object
+seurat <- lapply(seurat, function(x) {
+  x[["percent.mt"]] <- PercentageFeatureSet(x, pattern = "^MT-")
+  return(x)
+})
+lapply(seurat, function(x) VlnPlot(x,"percent.mt"))
+seurat <- pblapply(seurat, function(x) {
+  x <- subset(x, subset = percent.mt<=5)
+  return(x)
+})
+sapply(seurat, function(x) print(dim(x)))
+seurat <- pblapply(seurat, prep_integration)
+
+# integration
+anchors <- FindIntegrationAnchors(seurat)
+rm(seurat)
+integrated <- IntegrateData(anchorset = anchors)
+raw <- integrated@assays$RNA@counts
+rm(anchors)
+
+# Clean and prep data
+VlnPlot(integrated, features = c("nFeature_RNA","nCount_RNA","percent.mt"))
+integrated <- NormalizeData(integrated)
+integrated <- ScaleData(integrated)
+data <- GetAssayData(integrated)
+rm(integrated)
+
+# PCA
+pca <- prcomp(data)
+data_proj <- t(pca$rotation)
+# 2000 PCs
+write.table(raw, file=raw_out) # 11288 x 13319
+write.table(data_proj, file=data_out)
+write.table(pca$sdev,file=sdev_out)
+```
