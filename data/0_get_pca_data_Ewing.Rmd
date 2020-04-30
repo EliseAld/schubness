@@ -1,0 +1,39 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(pbapply)
+data_in <- "/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/Andrei_Ewing/ASP14_TS_u.txt"
+data_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing/ewing_pca_readyforhubness.txt"
+sdev_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Ewing/ewing_pca_sdev.txt"
+```
+
+```{r functions}
+filter <- function(df) {
+  feature <- apply(df,2,function(x) sum(x!=0, na.rm = T))
+  count <- apply(df,2,function(x) sum(x, na.rm=T))
+  print(plot(feature,count))
+}
+```
+
+```{r do PCA}
+data <- read.table(data_in, header=T, row.names = 1) # 20502 x 383
+filter(data)
+# Normalize + log transfo + scale
+seurat <- CreateSeuratObject(data)
+seurat <- NormalizeData(seurat)
+seurat <- ScaleData(seurat)
+data <- GetAssayData(seurat)
+rm(seurat)
+# PCA
+pca <- prcomp(data)
+data_proj <- t(pca$rotation)
+# 383 PCs
+write.table(data_proj, file=data_out)
+write.table(pca$sdev,file=sdev_out)
+```

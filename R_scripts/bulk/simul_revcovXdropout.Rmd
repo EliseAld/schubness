@@ -1,0 +1,58 @@
+---
+title: "Reverse coverage-based hub definition x Dropout"
+output: html_document
+---
+
+```{r load data, include = FALSE}
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_simul.R")
+hubness <- lapply(hubness, function(x) {x$cellID <- names(hubness_scores_data[[1]][[1]][[1]]); return(x)})
+
+dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+counts_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
+pca_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_readyforhubness",y,".csv"))
+simul <- lapply(counts_path, function(x) read.table(x))
+simul_pca <- lapply(pca_path, function(x) read.table(x))
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_functions.R")
+path_neighbors <- lapply(dropout_percent,function(x) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hub_network/neighbors_simul",x,".rds"))
+path_neighbors_pca <- lapply(dropout_percent,function(x) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hub_network/neighbors_pca_simul",x,".rds"))
+path_hub <- lapply(dropout_percent,function(x)
+  paste0("/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hubness_def/rev_cov/hubs_simul",x,".rds"))
+```
+
+```{r get hub scores, include=FALSE}
+hub_scores <- lapply(hubness, function(x) x$score[x$Dimension==(cell_nb-1) & x$p==2 & x$k==50])
+for (i in 1:length(hub_scores)) {
+  names(hub_scores[[i]]) <- names(hubness_scores_data[[1]][[1]][[1]])
+}
+```
+
+```{r get rev cov hubs as a fn of dim, include=FALSE}
+library(pbapply)
+hub_nb_dim<- function(data,d,k,hub_scores,thd,cell_nb) {
+  neighbors <- findKNN(t(data[1:d,]), k)
+  neighbor_list <- neighbors$index
+  rownames(neighbor_list) <- colnames(data)
+  h_nb <- reverse_coverage_k(neighbor_list, hub_scores, k, thd, cell_nb)
+  return(h_nb)
+}
+```
+
+```{r get neighbors nb}
+k=min(100,round(cell_nb/20))
+dim_val=c(2,5,10,20,30,40,50,100,500,1000,dim_nb)
+hub_nb = c()
+for (i in 1:length(simul_pca)) {
+  hub_nb <- c(hub_nb,pbapply::pbsapply(dim_val, FUN=function(x) hub_nb_dim(simul_pca[[i]],x,k,hub_scores[[i]],1,cell_nb)))
+}
+hub_nb <- data.frame("Hub_nb" = hub_nb)
+hub_nb$Dimension <- dim_val
+hub_nb$Dropout <- factor(rep(dropout_percent, each=length(dim_val)))
+```
+
+```{r reverse covarge hubs as a function of the dimension}
+ggplot(hub_nb, aes(x=Dimension, y=Hub_nb, color=Dropout)) +
+  geom_point() +
+  geom_line(aes(group=Dropout), lty=2) +
+  ylim(0,max(hub_nb$Hub_nb))
+```

@@ -1,0 +1,33 @@
+---
+title: "Reverse coverage-based hub definition x Dropout"
+output: html_document
+---
+
+```{r load data, include = FALSE}
+library(pbapply)
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_simul.R")
+hubness <- lapply(hubness, function(x) {x$cellID <- names(hubness_scores_data[[1]][[1]][[1]]); return(x)})
+
+dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+counts_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
+simul <- lapply(counts_path, function(x) read.table(x))
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_functions.R")
+```
+
+```{r get hub scores, include=FALSE}
+hub_scores <- lapply(hubness, function(x) x$score[x$Dimension==(cell_nb-1) & x$p==2 & x$k==50])
+```
+
+```{r scatter plot of hub score vs dropout score, include=FALSE}
+dropout_score <- pblapply(simul, function(x) {apply(x,2,function(y) mean(y==0)*100)})
+df <- data.frame("Cell"=rep(names(hubness_scores_data[[1]][[1]][[1]]), times=length(hub_scores)),
+                 "Hub_score"=unlist(hub_scores),
+                 "Dropout"=unlist(dropout_score),
+                 "Dataset"=rep(dropout_percent, each=cell_nb))
+ggplot(df, aes(x=Dropout, y=Hub_score, color=Dataset)) + geom_point() + scale_color_viridis()
+ggplot(df[df$Hub_score!=0,], aes(x=factor(Dataset), y=Hub_score)) +
+  geom_violin(scale="area", aes(fill=Dataset)) +
+  scale_fill_viridis()
+```
+

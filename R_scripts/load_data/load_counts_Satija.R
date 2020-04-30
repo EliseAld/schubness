@@ -1,5 +1,5 @@
 data <- read.csv("/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/10x/GSE100866_CBMC_8K_13AB_10X-RNA_umi.csv", row.names = 1)
-#data_pca <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Satija/afterPCA/GSE100866_pca_readyforhubness.csv")
+data_pca <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Satija/afterPCA/GSE100866_pca_readyforhubness.csv")
 entropy <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Satija/entropy_lei/GSE100866_scentropy_v1.csv")
 # Remove cells that look abnormal
 data <- data[grep("HUMAN_",rownames(data)),] # 20400 genes

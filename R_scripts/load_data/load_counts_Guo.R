@@ -1,5 +1,5 @@
 data <- read.table("/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/Guo_lung_2018/GSE99254_NSCLC.TCell.S9055.count.labeled.txt",header=T)
-#data_pca <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Guo/afterPCA/GSE99254_NSCLC.TCell.S9047.count.labeled.pca_readyforhubness.txt")
+data_pca <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Guo/afterPCA/GSE99254_NSCLC.TCell.S9047.count.labeled.pca_readyforhubness.txt")
 entropy <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Guo/entropy_lei/GSE99254_NSCLC.TCell.S9055_scentropy_v1.csv")
 # Remove cells that look abnormal
 nFeature <- apply(data,2,function(x) sum(x!=0))

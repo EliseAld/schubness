@@ -1,0 +1,26 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(pbapply)
+library(ggplot2)
+dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+sdev_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_sdev",y,".csv"))
+```
+
+```{r functions}
+
+```
+
+```{r screeplot}
+sdev<-pblapply(sdev_path, function(x) read.table(file=x))
+for (i in 1:length(sdev)) {
+  sdev[[i]]$Dropout <- dropout_percent[i]
+}
+sdev <- lapply(sdev, function(x) return(x[1:50,]))
+all_sdev <- do.call(rbind,sdev)
+all_sdev$eigenvalue <- 1:50
+ggplot(all_sdev, aes(x=eigenvalue, y=x, color=factor(Dropout))) + geom_point(size=0.5) + geom_line(aes(group=Dropout), alpha=0.5, lty=3)
+```

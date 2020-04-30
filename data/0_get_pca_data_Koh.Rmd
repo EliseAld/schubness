@@ -1,0 +1,42 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(pbapply)
+data_in <- "/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/Luis/sce_full_Koh.rds"
+data_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Koh/koh_pca_readyforhubness.txt"
+sdev_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/data/Koh/koh_pca_sdev.txt"
+```
+
+```{r functions}
+filter <- function(df) {
+  feature <- apply(df,2,function(x) sum(x!=0, na.rm = T))
+  count <- apply(df,2,function(x) sum(x, na.rm=T))
+  print(plot(feature,count))
+}
+```
+
+```{r do PCA}
+data <- readRDS(data_in)
+data <- data@assays$data$counts # 48981 x 531
+data <- data[apply(data,1,function(x) sum(x!=0, na.rm=T))>2,] # 41410 x 531
+filter(data)
+write.csv2(data,"/Users/elise/Desktop/GitHub/Hubness_sc/data/Koh/data.csv")
+# Normalize + log transfo + scale
+Seurat <- CreateSeuratObject(data)
+seurat <- NormalizeData(seurat)
+seurat <- ScaleData(seurat)
+data <- GetAssayData(seurat)
+rm(seurat)
+# PCA
+pca <- prcomp(data)
+data_proj <- t(pca$rotation)
+# 531 PCs
+write.table(data_proj, file=data_out)
+write.table(pca$sdev,file=sdev_out)
+```

@@ -10,13 +10,13 @@
 #PBS -q batch
  
 # Information
-#PBS -N hubness_satija_data
+#PBS -N hubness_pdx3
 #PBS -M elise.amblard@curie.fr
 #PBS -m abe
  
 # Other
 #PBS -j oe
-#PBS -o /data/tmp/zela/ML/hubness
+#PBS -o /data/tmp/zela/pca/pdx3
 #PBS -p 900
 
 
@@ -31,9 +31,9 @@ echo Directory is `pwd`
 # Main
 # ==============================================================================
 export PATH="/data/users/eamblard/tmp/R-3.5.3/bin:$PATH"
-script_dir="/data/tmp/zela/ML/hubness"
+script_dir="/data/tmp/zela/pca/pdx3"
 script="1_get_hubness_scores_minkow_bis.R"
-working_directory="/data/tmp/zela/ML/hubness"
+working_directory="/data/tmp/zela/pca/pdx3"
 
 echo Start = `date`
 cd $working_directory

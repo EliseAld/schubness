@@ -4,11 +4,11 @@ library(pbapply)
 
 # MAKE THE DIST MATRIX WITH ALL ENTRIES EXCEPT DIAG INSTEAD OF UPPER TRI
 
-matrix <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Guo/DCA/latent.tsv", row.names = 1)
+matrix <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/data/Zheng8/DCA/latent.tsv", row.names = 1)
 print("data loaded!")
 matrix <- data.frame(t(matrix))
 rownames(matrix) <- paste0("DCAlatent",1:nrow(matrix))
-n_dim = nrow(matrix)
+n_dim = nrow(matrix) #32
 
 # matrix is latent x cell
 
@@ -19,7 +19,7 @@ k.val <- c(5,50,100,200)
 p.val <- c(0.1,0.5,1,1.5,2,4,10)
 
 # Range of latent nb values
-pc.val <- c(2,5,10,n_dim)
+pc.val <- c(2,5,10,20,n_dim)
 
 # Write the function for the kNN graph
 distance_dim <- function(data,p) {
@@ -50,4 +50,4 @@ get_scores <- function(data,k.val,p.val,pc.val,dataset) {
     }
   }
 }
-get_scores(matrix, k.val=k.val, p.val=p.val, pc.val=pc.val,"Guo")
+get_scores(matrix, k.val=k.val, p.val=p.val, pc.val=pc.val,"Zheng8")

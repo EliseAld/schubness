@@ -54,7 +54,7 @@ reverse_coverage_hub(neighbor_pca_list, hub_scores, 500)
 
 ```{r reverse get all the data fixing the neighborhood size but increasing the nb of hubs}
 k=100
-reverse_coverage_k(neighbor_list, hub_scores, k)
-reverse_coverage_k(neighbor_pca_list, hub_scores, k)
+reverse_coverage_k(neighbor_list, hub_scores, k, 2)
+reverse_coverage_k(neighbor_pca_list, hub_scores, k, 2)
 ```
 

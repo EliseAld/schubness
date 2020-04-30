@@ -1,0 +1,40 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(Seurat)
+library(pbapply)
+dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+data_in <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
+data_out <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_readyforhubness",y,".csv"))
+sdev_out <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_sdev",y,".csv"))
+```
+
+```{r functions}
+zero_percent <- function(data) { # gene x cell matrix
+  return(sum(data==0)/ncol(data)/nrow(data)*100)
+}
+prep_seurat <- function(data) {
+  seurat <- CreateSeuratObject(data)
+  seurat <- NormalizeData(seurat)
+  seurat <- ScaleData(seurat)
+  return(GetAssayData(seurat))
+}
+```
+
+```{r do PCA}
+data <- lapply(X=data_in, FUN=function(x) read.table( file=x))
+data <- data[,-1] # 57763 x 1213
+# Sparsity
+dropout <- sapply(data,function(x) zero_percent(x)) # 46%, 49%, 55%, 60%, 66%, 72%, 86%, 88%, 92%, 94%, 97%
+# Seurat normalization
+data <- lapply(data, function(x) prep_seurat(x))
+# PCA
+pca <- pblapply(data, function(x) prcomp(x))
+data_proj <- pblapply(pca, function(x) t(x$rotation))
+# 1213 PCs
+pbmapply(x=data_proj, y=data_out, function(x,y) write.table(x, file=y))
+pbmapply(x=pca, y=sdev_out, function(x,y) write.table(x$sdev,file=y))
+```

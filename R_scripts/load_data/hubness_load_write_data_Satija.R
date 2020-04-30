@@ -4,7 +4,7 @@
 cell_nb=8604
 
 pval=c(0.1,0.5,1,1.5,2,4,10)
-pcval=c(2,5,10,50,100,500,1000,5000,(cell_nb-1))
+pcval=c(2,5,10,20,30,40,50,100,500,1000,5000,(cell_nb-1))
 kval=c(5,50,100,200)
 
 localization = "/Users/elise/Desktop/Github/Hubness_sc/results/"
@@ -29,7 +29,7 @@ hubness <- data.frame("score"=unlist(hubness_scores_data),
                       "p"=rep(pval, each=length(kval)*cell_nb, times=length(pcval)),
                       "k"=rep(kval, each=cell_nb, times=length(pcval)*length(pval)))
 # Reorder factor
-hubness$Dimension <- factor(hubness$Dimension, levels = c("2","5","10","50","100","500","1000","5000",as.character(cell_nb-1)))
+#hubness$Dimension <- factor(hubness$Dimension, levels = c("2","5","10","50","100","500","1000","5000",as.character(cell_nb-1)))
 # Removing cells with hubness score = 0 DO NOT DO IT
 find_antihub_nb_per_condition <- function(hubness_df, cell_nb) {
    pc_nb = length(unique(hubness_df$Dimension))
