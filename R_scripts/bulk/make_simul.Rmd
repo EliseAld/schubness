@@ -25,8 +25,7 @@ zero_percent <- function(data) { # gene x cell matrix
 ```
 
 ```{r}
-dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
-dropout0 <- zero_percent(data)
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
 data_simul <- lapply(dropout_percent,function(x) generate_dropout(data,x))
 dropout_simul <- sapply(data_simul,function(x) zero_percent(x))
 mapply(x=data_simul, y=dropout_percent, function(x,y) write.table(x, file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv")))

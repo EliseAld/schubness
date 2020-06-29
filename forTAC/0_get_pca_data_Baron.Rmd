@@ -1,0 +1,46 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(pbapply)
+data_in <- "/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/DimRedPaper/Baron/sce_Baron.rds"
+data_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/forTAC/results/Baron/baron_pca_readyforhubness.txt"
+sdev_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/forTAC/results/Baron/baron_pca_sdev.txt"
+```
+
+```{r functions}
+filter <- function(df) {
+  feature <- apply(df,2,function(x) sum(x!=0, na.rm = T))
+  count <- apply(df,2,function(x) sum(x, na.rm=T))
+  print(plot(feature,count))
+}
+data_prep <- function(data) {
+  data <- log10(data+1)
+  return(data)
+}
+```
+
+```{r do PCA}
+data <- readRDS(data_in)
+data <- data@assays$data$counts # 14878 x 1886
+data <- data[apply(data,1,function(x) sum(x!=0, na.rm=T))>2,] # 14466 x 1886
+filter(data)
+ncount <- apply(data,2,function(x) sum(x, na.rm=T))
+data <- data[,ncount<2e4]  # 14466 x 1883
+write.csv(data,"/Users/elise/Desktop/GitHub/Hubness_sc/data/Baron/data.csv")
+# Normalize + log transfo + scale
+data <- data_prep(data)
+# PCA
+hvg <- apply(data,1,var)
+genes<-names(sort(hvg,decreasing = T))[1:5e3]
+pca <- prcomp(data[genes,])
+data_proj <- t(pca$rotation)
+# 1883 PCs
+write.table(data_proj, file=data_out)
+write.table(pca$sdev,file=sdev_out)
+```

@@ -249,6 +249,32 @@ reverse_coverage_k <- function(neighbor_list, hub_scores, k, thd, n_cell) {
   return(plateau_detection(neighbor_list, hub_scores, k, thd, n_cell))
 }
 
+reverse_coverage_percent_k <- function(neighbor_list, hub_scores, k, n_cell, percent) {
+  cell_scores_sorted <- order(hub_scores, decreasing=T)
+  hub_nb <- 10
+  hubs <- cell_scores_sorted[1:hub_nb]
+  coverage <- sum(apply(neighbor_list[,1:k],1,function(x) any(x %in% hubs)))
+  while (coverage[hub_nb/10] < n_cell*0.9 & hub_nb < 1000) {
+    hub_nb <- hub_nb+10
+    hubs <- cell_scores_sorted[1:hub_nb]
+    coverage <- c(coverage, sum(apply(neighbor_list[,1:k],1,function(x) any(x %in% hubs))))
+  }
+  rev_coverage_rdm <- reverse_coverage_random_k(neighbor_list, k, n_cell)
+  thd_hub <- seq(10,hub_nb,10)[coverage/n_cell*100 > percent][1]
+  plot(seq(10,hub_nb,10),coverage/n_cell*100, ylim=c(0,100),
+       pch=16,
+       xlab="Number of hubs",
+       ylab="Reverse coverage (%)",
+       main=paste0("Reverse coverage of the data looking at ",k," neighbors"))
+  points(seq(10,rev_coverage_rdm$random_cell_nb,10),rev_coverage_rdm$coverage/n_cell*100, col="lightblue", pch=3)
+  abline(h=90, col='red', lty='dashed')
+  abline(h=percent, col='red', lty='dashed')
+  abline(v=hub_nb, col="red", lty="dashed")
+  abline(v=rev_coverage_rdm$random_cell_nb, col="lightblue", lty="dotted")
+  abline(v=thd_hub, col="orange")
+  return(thd_hub)
+}
+
 plateau_detection <- function(neighbor_list, hub_scores, k, thd, n_cell) {
   cell_scores_sorted <- order(hub_scores, decreasing=T)
   hub_nb <- 10

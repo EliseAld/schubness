@@ -1,4 +1,3 @@
-library(Seurat)
 library(philentropy)
 library(pbapply)
 
@@ -38,13 +37,13 @@ k.occurence <- function(k.nn,data) {
   return(occurence)
 }
 # Get the scores
-get_scores <- function(data,k.val,p.val,pc.val) {
+get_scores <- function(data,k.val,p.val,pc.val,name) {
   for (pc in pc.val) {
     data_pc <- data[1:pc,]
     for (p in p.val) {
       dist.matrix <- distance_dim(data=data_pc,p=p)
       minkow <- pbapply::pblapply(X=k.val, FUN=function(x,y,z) {k.occurence(kNN(y,x),z)}, y=dist.matrix, z=data)
-      saveRDS(minkow, file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/results/simul/95/kNN_occurence_",p,"_pca",pc,"_minkow_bis.rds"))
+      saveRDS(minkow, file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/results/simul/",name,"/kNN_occurence_",p,"_pca",pc,"_minkow_bis.rds"))
       print(paste0(p, " pval done for PC",pc))
     }
   }

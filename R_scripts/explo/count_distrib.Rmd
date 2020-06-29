@@ -1,0 +1,35 @@
+---
+title: "Count distribution"
+output: html_document
+---
+
+```{r load data, include = FALSE}
+library(pbapply)
+datasets = c("Baron","Darmanis","Guo","PDX1","Satija","Silver","Zheng4","Zheng8","BRCA")
+counts <- pblapply(datasets,
+                       function(x) {
+                          source(file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_",x,".R"));
+                                 return(data)})
+```
+
+```{r count hist}
+library(ggplot2)
+nCounts <- pblapply(counts,function(x) {apply(x,2,sum)})
+nFeatures <- pblapply(counts,function(x) {apply(x,2,function(x) sum(x!=0))})
+nFeatures_norm <- pblapply(counts,function(x) {apply(x,2,function(x) mean(x!=0))})
+df <- data.frame("nCounts"=unname(unlist(nCounts)),
+                 "Dataset"=unname(unlist(mapply(X=datasets,y=nCounts,FUN=function(X,y) rep(X,length(y))))),
+                 "nFeatures"=unname(unlist(nFeatures)),
+                 "nFeatures_norm"=unname(unlist(nFeatures_norm)))
+ggplot(df, aes(x=nCounts, fill=Dataset)) +
+  geom_bar() +
+  facet_wrap(~Dataset)
+ggplot(df, aes(x=nFeatures, fill=Dataset)) +
+  geom_bar() +
+  facet_wrap(~Dataset)
+ggplot(df, aes(x=nFeatures_norm, fill=Dataset)) +
+  geom_bar() +
+  facet_wrap(~Dataset)
+lapply(datasets, function(x) hist(df$nCounts[df$Dataset==x]))
+```
+

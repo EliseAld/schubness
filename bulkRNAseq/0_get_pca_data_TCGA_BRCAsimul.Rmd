@@ -4,9 +4,9 @@ output: html_document
 ---
 
 ```{r libs & paths}
-library(Seurat)
 library(pbapply)
-dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+library(EnsDb.Hsapiens.v79)
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
 data_in <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
 data_out <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_readyforhubness",y,".csv"))
 sdev_out <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_sdev",y,".csv"))
@@ -16,25 +16,83 @@ sdev_out <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/Git
 zero_percent <- function(data) { # gene x cell matrix
   return(sum(data==0)/ncol(data)/nrow(data)*100)
 }
-prep_seurat <- function(data) {
-  seurat <- CreateSeuratObject(data)
-  seurat <- NormalizeData(seurat)
-  seurat <- ScaleData(seurat)
-  return(GetAssayData(seurat))
+data_prep <- function(data) {
+  data <- log10(data+1)
+  return(data)
 }
 ```
 
 ```{r do PCA}
-data <- lapply(X=data_in, FUN=function(x) read.table( file=x))
-data <- data[,-1] # 57763 x 1213
+data <- pblapply(X=data_in, FUN=function(x) read.table( file=x)) 
+data <- pblapply(data, function(x) return(x[grep("^ENS",rownames(x)),])) # 57760 x 1213
+data <- pblapply(data, function(x) {rownames(x) <- gsub("\\..*","",rownames(x)); return(x)})
 # Sparsity
 dropout <- sapply(data,function(x) zero_percent(x)) # 46%, 49%, 55%, 60%, 66%, 72%, 86%, 88%, 92%, 94%, 97%
-# Seurat normalization
-data <- lapply(data, function(x) prep_seurat(x))
+# Replace with genes names, remove duplicates
+genes <- ensembldb::select(EnsDb.Hsapiens.v79, keys=rownames(data[[1]]), keytype = "GENEID", columns = c("SYMBOL"))$SYMBOL
+duplicates <- duplicated(genes)
+data <- pblapply(data, function(x) {x <- x[!duplicates,];
+                                    rownames(x) <- unique(genes);
+                                    return(x)}) # 56029 x 1213
+# Keep 10k HVG
+data <- pblapply(data, function(x) {hvg <- names(sort(apply(x,1,var), decreasing = T)[1:1e4]); return(x[hvg,])})
+# Log transfo
+data <- pblapply(data, function(x) data_prep(x))
 # PCA
-pca <- pblapply(data, function(x) prcomp(x))
+pca <- pblapply(data, function(x) prcomp(x, center=T, scale.=F))
 data_proj <- pblapply(pca, function(x) t(x$rotation))
 # 1213 PCs
 pbmapply(x=data_proj, y=data_out, function(x,y) write.table(x, file=y))
 pbmapply(x=pca, y=sdev_out, function(x,y) write.table(x$sdev,file=y))
 ```
+
+```{r plot sdev}
+library(ggplot2)
+sdev <- pblapply(pca, function(x) return(x$sdev/x$sdev[1]))
+sdev_df <- data.frame("Sdev" = unlist(sdev),
+                      "Dropout"=rep(dropout_percent,each=length(sdev[[1]])),
+                      "x"=1:length(sdev[[1]]))
+ggplot(sdev_df[sdev_df$x<25,], aes(x=x, y=Sdev, color=factor(Dropout))) + geom_point() + geom_line(aes(group=Dropout)) + geom_hline(yintercept=0.1)
+
+linear_dim <- pbsapply(sdev, function(x) return(which(x<=0.1)[1]))
+plot(dropout_percent,linear_dim)
+```
+
+```{r distance correlation scatter plot}
+library(ggplot2)
+dropout_choice <- c(0,50,90)
+choice <- dropout_percent %in% dropout_choice
+nPC <- c(1e1,1e2,1e3)
+mat_ref <- data[choice]
+mat <- data_proj[choice]
+distances_ref <- pblapply(mat_ref, function(x) dist(t(x)))
+distances <- pblapply(mat, function(y) {sapply(nPC, function(x) dist(t(y[1:x,])))})
+dist_df <- data.frame("Distance"=unlist(distances),
+                      "Dropout"=rep(rep(dropout_choice,each=lengths(distances)[1]/length(dropout_choice)),times=length(nPC)),
+                      "nPC"=rep(nPC,each=lengths(distances)[1]))
+dist_df_0 <- data.frame("Distance_ref"=rep(unlist(distances_ref)[1:lengths(distances_ref)[1]],times=length(nPC)),
+                        "Distance_comp"=c(dist_df$Distance[dist_df$Dropout==0 & dist_df$nPC==1e1],
+                                          dist_df$Distance[dist_df$Dropout==0 & dist_df$nPC==1e2],
+                                          dist_df$Distance[dist_df$Dropout==0 & dist_df$nPC==1e3]),
+                        "nPC"=rep(nPC,each=sum(dist_df$Dropout==0 & dist_df$nPC==1e1)))
+dist_df_50 <- data.frame("Distance_ref"=rep(unlist(distances_ref)[(1+lengths(distances_ref)[1]):(2*lengths(distances_ref)[1])],times=length(nPC)),
+                        "Distance_comp"=c(dist_df$Distance[dist_df$Dropout==50 & dist_df$nPC==1e1],
+                                          dist_df$Distance[dist_df$Dropout==50 & dist_df$nPC==1e2],
+                                          dist_df$Distance[dist_df$Dropout==50 & dist_df$nPC==1e3]),
+                        "nPC"=rep(nPC,each=sum(dist_df$Dropout==0 & dist_df$nPC==1e1)))
+dist_df_90 <- data.frame("Distance_ref"=rep(unlist(distances_ref)[(1+2*lengths(distances_ref)[1]):(3*lengths(distances_ref)[1])],times=length(nPC)),
+                        "Distance_comp"=c(dist_df$Distance[dist_df$Dropout==90 & dist_df$nPC==1e1],
+                                          dist_df$Distance[dist_df$Dropout==90 & dist_df$nPC==1e2],
+                                          dist_df$Distance[dist_df$Dropout==90 & dist_df$nPC==1e3]),
+                        "nPC"=rep(nPC,each=sum(dist_df$Dropout==0 & dist_df$nPC==1e1)))
+ggplot(dist_df_0, aes(x=Distance_ref,y=Distance_comp,color=factor(nPC))) +
+  geom_density2d(aes(group = nPC), size=1) +
+  geom_point(size=0.01, alpha=0.01)
+ggplot(dist_df_50, aes(x=Distance_ref,y=Distance_comp,color=factor(nPC))) +
+  geom_density2d(aes(group = nPC), size=1) +
+  geom_point(size=0.01, alpha=0.01)
+ggplot(dist_df_90, aes(x=Distance_ref,y=Distance_comp,color=factor(nPC))) +
+  geom_density2d(aes(group = nPC), size=1) +
+  geom_point(size=0.01, alpha=0.01)
+```
+

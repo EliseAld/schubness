@@ -8,7 +8,7 @@ library(pbapply)
 source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_simul.R")
 hubness <- lapply(hubness, function(x) {x$cellID <- names(hubness_scores_data[[1]][[1]][[1]]); return(x)})
 
-dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
 counts_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
 simul <- lapply(counts_path, function(x) read.table(x))
 
@@ -19,7 +19,7 @@ source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_fun
 hub_scores <- lapply(hubness, function(x) x$score[x$Dimension==(cell_nb-1) & x$p==2 & x$k==50])
 ```
 
-```{r scatter plot of hub score vs dropout score, include=FALSE}
+```{r scatter plot of hub score vs dropout score}
 dropout_score <- pblapply(simul, function(x) {apply(x,2,function(y) mean(y==0)*100)})
 df <- data.frame("Cell"=rep(names(hubness_scores_data[[1]][[1]][[1]]), times=length(hub_scores)),
                  "Hub_score"=unlist(hub_scores),

@@ -1,0 +1,56 @@
+---
+title: "Skewness x size"
+output:
+  html_document: default
+  pdf_document: default
+---
+Method 4 : skewness, appropriate YES
+
+```{r libs, results="hide", include = FALSE}
+library(philentropy, quietly = T)
+library(ggplot2, quietly = T)
+library(viridis, quietly = T)
+library(ggridges, quietly = T)
+library(scales, quietly = T)
+library(ggpubr, quietly = T)
+library(pbapply, quietly = T)
+```
+
+```{r functions, include = FALSE}
+datasets = c("Baron","Darmanis","Ewing","Guo","PDX1","Satija","Silver","Zheng4","Zheng8")
+hub_scores <- pblapply(datasets,
+                       function(x) {
+                          source(file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_",x,".R"));
+                                 return(list("cell_nb"=cell_nb,"scores"=hubness))})
+get_hub4 <- function(df,kval,pcval,pval) { # skewness
+   s = c()
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            s = c(s, mean((val-mean(val))^3)/sd(val)^3)
+         }
+      }
+   }
+   skewness_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=s)
+   skewness_val$Dimension <- factor(skewness_val$Dimension, levels = pcval)
+   return(skewness_val)
+}
+```
+
+```{r get the skewness}
+pcval <- sapply(hub_scores, function(x) sort(unique(x$scores$Dimension), decreasing = T)[2])
+minkow=2
+skewness <- pbmapply(x=hub_scores, y=pcval, function(x,y) get_hub4(x$scores,kval=kval,pcval=y,pval=minkow)$GHubness)
+skewness <- data.frame("Skewness"=as.vector(skewness))
+skewness$k <- kval
+skewness$Dataset <- rep(datasets, each=length(kval))
+size <- sapply(hub_scores, function(x) return(x$cell_nb))
+skewness$Size <- rep(size, each=length(kval))
+ggplot(skewness, aes(x=Size, y=Skewness, color=factor(k))) + geom_point() + geom_line(aes(group=k))
+```
+
+

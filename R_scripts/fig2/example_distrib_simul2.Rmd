@@ -1,0 +1,222 @@
+---
+title: "fig2"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r libs}
+library(knn.covertree)
+library(pbapply)
+library(ggplot2)
+```
+
+```{r get data}
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
+counts_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
+pca_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_readyforhubness",y,".csv"))
+sdev_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_sdev",y,".csv"))
+simul <- pblapply(counts_path, function(x) read.table(x))
+simul_pca <- pblapply(pca_path, function(x) read.table(x))
+sdev<-pblapply(sdev_path, function(x) read.table(file=x))
+sdev <- pblapply(sdev, function(x) return(x/x[1,1]))
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_simul.R")
+hubness <- lapply(hubness, function(x) {x$cellID <- names(hubness_scores_data[[1]][[1]][[1]]); return(x)})
+```
+
+```{r functions}
+get_hub_scores <- function(data,k) {
+  knn_graph <- knn.covertree::find_knn(t(data),k)
+  knn_list <- knn_graph$index
+  occurence <- pbsapply(1:nrow(knn_list), function(x) {sum(knn_list==x)})
+  return(occurence)
+}
+asymmetry_evaluation <- function(data) {
+  knn_graph <- knn.covertree::find_knn(t(data),k)
+  knn_list <- knn_graph$index
+  increment = 0
+  for (i in 1:nrow(knn_list)) {
+    for (j in 1:ncol(knn_list)) {
+      if (i %in% knn_list[knn_list[i,j],]) {
+        increment <- increment + 1 
+      }
+    }
+  }
+  return(1-increment/(nrow(knn_list)*ncol(knn_list)))
+}
+skewness <- function(distrib) {
+  return(mean((distrib-mean(distrib))^3)/(sd(distrib)^3))
+}
+antihub <- function(distrib) {
+  return(sum(distrib==0))
+}
+k_thd <- function(distrib,k) {
+  return(sum(distrib>=2*k))
+} 
+meansd_thd <- function(distrib) {
+  thd <- mean(distrib) + 3*sd(distrib)
+  return(sum(distrib>=thd))
+}
+generate_gaussian <- function(n,dim) {
+  return(t(sapply(1:dim, function(x) rnorm(n))))
+}
+generate_uniform <- function(n,dim) {
+  return(t(sapply(1:dim, function(x) runif(n,min=(-1)))))
+}
+relative_contrast <- function(data) {
+  tmp <- as.matrix(dist(t(data)))
+  diag(tmp) <- NA
+  rc <- apply(tmp, 1, function(x) abs(max(x, na.rm = T)-min(x, na.rm = T))/min(x, na.rm = T))
+  return(mean(rc))
+}
+extract_r_squared <- function(lm) {
+  return(summary(lm)$r.squared)
+}
+```
+
+```{r get hub scores}
+k=50
+dim_val=unique(hubness[[1]]$Dimension)
+scores <- pblapply(hubness, function(x) {tmp <- x[x$p==2 & x$k==k,]; score<-pblapply(dim_val, function(y) return(tmp$score[tmp$Dimension==y])); return(score)})
+```
+
+```{r look at the distrib}
+lapply(scores, function(x) lapply(x, hist))
+```
+
+```{r look at the parameters as a function of dim}
+Skewness <- data.frame("Skewness"=as.vector(pbsapply(scores, function(x) sapply(x, skewness))),
+                       "Dropout"=rep(dropout_percent, each=length(dim_val)),
+                       "Dimension"=dim_val)
+ggplot(Skewness, aes(x=Dimension, y=Skewness)) +
+  geom_line(aes(group=Dropout)) +
+  geom_point(aes(color=Dropout))
+Antihub <- data.frame("Antihub"=as.vector(pbsapply(scores, function(x) sapply(x, antihub))),
+                      "Dropout"=rep(dropout_percent, each=length(dim_val)),
+                      "Dimension"=dim_val)
+ggplot(Antihub, aes(x=Dimension, y=Antihub)) +
+  geom_line(aes(group=Dropout)) +
+  geom_point(aes(color=Dropout))
+KThd <- data.frame("KThd"=as.vector(pbsapply(scores, function(x) sapply(x, function(y) k_thd(y,k)))),
+                   "Dropout"=rep(dropout_percent, each=length(dim_val)),
+                   "Dimension"=dim_val)
+ggplot(KThd, aes(x=Dimension, y=KThd)) +
+  geom_line(aes(group=Dropout)) +
+  geom_point(aes(color=Dropout))
+MeanSdThd <- data.frame("MeanSdThd"=as.vector(pbsapply(scores, function(x) sapply(x, meansd_thd))),
+                        "Dropout"=rep(dropout_percent, each=length(dim_val)),
+                        "Dimension"=dim_val)
+ggplot(MeanSdThd, aes(x=Dimension, y=MeanSdThd)) +
+  geom_line(aes(group=Dropout)) +
+  geom_point(aes(color=Dropout))
+
+Relative_contrast <- data.frame("Relative_contrast"=as.vector(pbsapply(simul_pca,
+                                                       function(x) sapply(dim_val,
+                                                                          function(y) relative_contrast(x[1:y,])))),
+                        "Dropout"=rep(dropout_percent, each=length(dim_val)),
+                        "Dimension"=dim_val)
+ggplot(Relative_contrast, aes(x=Dimension, y=Relative_contrast)) +
+  geom_line(aes(group=Dropout)) +
+  geom_point(aes(color=Dropout))
+
+Asymmetry <- data.frame("Asymmetry"=as.vector(pbsapply(simul_pca,
+                                                       function(x) sapply(dim_val,
+                                                                          function(y) asymmetry_evaluation(x[1:y,])))),
+                        "Dropout"=rep(dropout_percent, each=length(dim_val)),
+                        "Dimension"=dim_val)
+ggplot(Asymmetry, aes(x=Dimension, y=Asymmetry)) +
+  geom_line(aes(group=Dropout)) +
+  geom_point(aes(color=Dropout))
+```
+
+```{r evaluate hubs as a function of dropout}
+lm1 <- lapply(dim_val, function(x) lm(Asymmetry~Dropout, data=Asymmetry[Asymmetry$Dimension==x,]))
+lm2 <- lapply(dim_val, function(x) lm(Skewness~Dropout, data=Skewness[Skewness$Dimension==x,]))
+lm3 <- lapply(dim_val, function(x) lm(Antihub~Dropout, data=Antihub[Antihub$Dimension==x,]))
+lm4 <- lapply(dim_val, function(x) lm(MeanSdThd~Dropout, data=MeanSdThd[MeanSdThd$Dimension==x,]))
+lm5 <- lapply(dim_val, function(x) lm(KThd~Dropout, data=KThd[KThd$Dimension==x,]))
+lm6 <- lapply(dim_val, function(x) lm(Relative_contrast~Dropout, data=Relative_contrast[Relative_contrast$Dimension==x,]))
+lm1 <- sapply(lm1, extract_r_squared)
+lm2 <- sapply(lm2, extract_r_squared)
+lm3 <- sapply(lm3, extract_r_squared)
+lm4 <- sapply(lm4, extract_r_squared)
+lm5 <- sapply(lm5, extract_r_squared)
+lm6 <- sapply(lm6, extract_r_squared)
+Asymmetry$Param <- "Asymmetry"
+Skewness$Param <- "Skewness"
+Antihub$Param <- "Antihub"
+MeanSdThd$Param <- "MeanSdThd"
+KThd$Param <- "KThd"
+Relative_contrast$Param <- "Relative_contrast"
+colnames(Asymmetry) <- c("Value","Dropout","Dimension","Param")
+colnames(Skewness) <- c("Value","Dropout","Dimension","Param")
+colnames(Antihub) <- c("Value","Dropout","Dimension","Param")
+colnames(MeanSdThd) <- c("Value","Dropout","Dimension","Param")
+colnames(KThd) <- c("Value","Dropout","Dimension","Param")
+colnames(Relative_contrast) <- c("Value","Dropout","Dimension","Param")
+all_params <- rbind(rbind(rbind(rbind(rbind(Asymmetry,
+                                            Skewness),
+                                      Antihub),
+                                MeanSdThd),
+                          KThd),
+                    Relative_contrast)
+ggplot(all_params, aes(x=Dropout, y=Value)) +
+  geom_line(aes(group=Dimension)) +
+  geom_point(aes(color=factor(Dimension))) +
+  facet_wrap(~Param, scales = "free")
+
+```
+
+```{r link to distance concentration}
+rc <- pbsapply(simul_pca, function(x) sapply(dim_val, function(y) relative_contrast(x[1:y,])))
+link_df <- data.frame("Relative_contrast"=as.vector(rc),
+                      "Asymmetry"=Asymmetry$Value,
+                      "Skewness"=Skewness$Value,
+                      "KThd"=KThd$Value,
+                      "MeanSdThd"=MeanSdThd$Value,
+                      "Antihub"=Antihub$Value,
+                      "Dimension"=dim_val,
+                      "Dropout"=rep(dropout_percent, each=length(dim_val)))
+
+lm <- lm(Skewness ~ log(Relative_contrast), data=link_df)
+summary(lm)
+ggplot(link_df, aes(x=log(Relative_contrast), y=Skewness, color=Dropout)) +
+  geom_point() #+
+ # geom_abline(slope = lm$coefficients[2], intercept = lm$coefficients[1], color="red")
+# Do pearson and spearman also
+
+lm <- lm(Asymmetry ~ log(Relative_contrast), data=link_df)
+summary(lm)
+ggplot(link_df, aes(x=log(Relative_contrast), y=Asymmetry, color=Dropout)) +
+  geom_point()# +
+  #geom_abline(slope = lm$coefficients[2], intercept = lm$coefficients[1], color="red")
+
+lm <- lm(Antihub ~ log(Relative_contrast), data=link_df)
+summary(lm)
+ggplot(link_df, aes(x=log(Relative_contrast), y=Antihub, color=Dropout)) +
+  geom_point() #+
+  #geom_abline(slope = lm$coefficients[2], intercept = lm$coefficients[1], color="red")
+# Do pearson and spearman also
+
+lm <- lm(KThd ~ log(Relative_contrast), data=link_df)
+summary(lm)
+ggplot(link_df, aes(x=log(Relative_contrast), y=KThd, color=Dropout)) +
+  geom_point()# +
+  #geom_abline(slope = lm$coefficients[2], intercept = lm$coefficients[1], color="red")
+
+lm <- lm(MeanSdThd ~ log(Relative_contrast), data=link_df)
+summary(lm)
+ggplot(link_df, aes(x=log(Relative_contrast), y=MeanSdThd, color=Dropout)) +
+  geom_point() #+
+  #geom_abline(slope = lm$coefficients[2], intercept = lm$coefficients[1], color="red")
+
+ggplot(link_df, aes(x=Skewness, y=Asymmetry, color=Dropout)) +
+  geom_point()
+ggplot(link_df, aes(x=Antihub, y=Asymmetry, color=Dropout)) +
+  geom_point()
+ggplot(link_df, aes(x=KThd, y=Asymmetry, color=Dropout)) +
+  geom_point()
+ggplot(link_df, aes(x=MeanSdThd, y=Asymmetry, color=Dropout)) +
+  geom_point()
+```
+

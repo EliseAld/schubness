@@ -1,0 +1,43 @@
+---
+title: "Reverse coverage-based hub definition2 -Satija"
+output: html_document
+---
+
+```{r load data, include = FALSE}
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_Satija.R")
+hubness$cellID <- names(hubness_scores_data[[1]][[1]])
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_counts_Satija.R")
+
+source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/load_functions.R")
+#path_neighbors <- "/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hub_network/neighbors_Satija.rds"
+#path_neighbors_pca <- "/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/hub_network/neighbors_pca_Satija.rds"
+```
+
+```{r get hub scores, include=FALSE}
+hub_scores <- hubness$score[hubness$Dimension==(cell_nb-1) & hubness$p==2 & hubness$k==50]
+names(hub_scores) <- names(hubness_scores_data[[1]][[1]])
+```
+
+```{r get rev cov hubs as a fn of dim, include=FALSE}
+library(pbapply)
+hub_nb_dim<- function(data,d,k,hub_scores, percent) {
+  neighbors <- findKNN(t(data[1:d,]), k)
+  neighbor_list <- neighbors$index
+  rownames(neighbor_list) <- colnames(data)
+  h_nb <- reverse_coverage_percent_k(neighbor_list, hub_scores, k, cell_nb, percent)
+  return(h_nb)
+}
+```
+
+```{r get numbers, include=FALSE}
+k=min(100,round(ncol(data/20)))
+dim_val=c(2,5,10,20,30,40,50,100,500,1000,5000,dim_nb)
+hb_nb <- pbapply::pbsapply(dim_val, FUN=function(x) hub_nb_dim(data_pca,x,k,hub_scores, 60))
+```
+
+```{r reverse coverage hubs as a function of the dimension}
+#hb_nb <- pbapply::pbsapply(dim_val, FUN=function(x) hub_nb_dim(data_pca,x,k,hub_scores,1))
+plot(dim_val,hb_nb,xlab="Number of dimensions used for the construction of the kNN graph",ylab="Nb of hubs (percent)",pch=8)
+lines(dim_val,hb_nb, lty=2, color="grey")
+```

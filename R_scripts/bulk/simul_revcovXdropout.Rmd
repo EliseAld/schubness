@@ -7,7 +7,7 @@ output: html_document
 source(file="/Users/elise/Desktop/GitHub/Hubness_sc/R_scripts/load_data/hubness_load_write_data_simul.R")
 hubness <- lapply(hubness, function(x) {x$cellID <- names(hubness_scores_data[[1]][[1]][[1]]); return(x)})
 
-dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
 counts_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
 pca_path <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_readyforhubness",y,".csv"))
 simul <- lapply(counts_path, function(x) read.table(x))

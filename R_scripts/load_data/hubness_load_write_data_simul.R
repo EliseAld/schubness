@@ -7,7 +7,7 @@ pval=c(0.1,0.5,1,1.5,2,4,10)
 pcval=c(2,5,10,20,30,40,50,100,500,1000,(dim_nb-1))
 kval=c(5,50,100,200)
 
-dropout_percent <- c(5,10,20,30,40,50,75,80,85,90,95)
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
 localization = "/Users/elise/Desktop/Github/Hubness_sc/results/"
 path = sapply(dropout_percent, function(x) paste0("simul/",x,"/"))
 all_paths=lapply(path, function(z) unlist(lapply(X=pcval,

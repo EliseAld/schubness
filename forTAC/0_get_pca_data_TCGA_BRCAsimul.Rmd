@@ -1,0 +1,114 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(pbapply)
+library(EnsDb.Hsapiens.v79)
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
+data_in <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul",y,".csv"))
+data_out <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/forTAC/results/bulk/simul_pca_readyforhubness",y,".csv"))
+sdev_out <- sapply(dropout_percent, function(y) paste0("/Users/elise/Desktop/GitHub/Hubness_sc/forTAC/results/bulk/simul_pca_sdev",y,".csv"))
+```
+
+```{r functions}
+zero_percent <- function(data) { # gene x cell matrix
+  return(sum(data==0)/ncol(data)/nrow(data)*100)
+}
+data_prep <- function(data) {
+  data <- log10(data+1)
+  return(data)
+}
+asymmetry_evaluation <- function(data) {
+  knn_graph <- knn.covertree::find_knn(t(data),k)
+  knn_list <- knn_graph$index
+  increment = 0
+  for (i in 1:nrow(knn_list)) {
+    for (j in 1:ncol(knn_list)) {
+      if (i %in% knn_list[knn_list[i,j],]) {
+        increment <- increment + 1 
+      }
+    }
+  }
+  return(1-increment/(nrow(knn_list)*ncol(knn_list)))
+}
+```
+
+```{r do PCA}
+data <- pblapply(X=data_in, FUN=function(x) read.table( file=x)) 
+data <- pblapply(data, function(x) return(x[grep("^ENS",rownames(x)),])) # 57760 x 1213
+data <- pblapply(data, function(x) {rownames(x) <- gsub("\\..*","",rownames(x)); return(x)})
+# Sparsity
+dropout <- sapply(data,function(x) zero_percent(x)) # 46%, 49%, 55%, 60%, 66%, 72%, 86%, 88%, 92%, 94%, 97%
+# Replace with genes names, remove duplicates
+genes <- ensembldb::select(EnsDb.Hsapiens.v79, keys=rownames(data[[1]]), keytype = "GENEID", columns = c("SYMBOL"))$SYMBOL
+duplicates <- duplicated(genes)
+data <- pblapply(data, function(x) {x <- x[!duplicates,];
+                                    rownames(x) <- unique(genes);
+                                    return(x)}) # 56029 x 1213
+# Keep 5k HVG
+data <- pblapply(data, function(x) {hvg <- names(sort(apply(x,1,var), decreasing = T)[1:5e3]); return(x[hvg,])})
+# Log transfo
+data <- pblapply(data, function(x) data_prep(x))
+# PCA
+pca <- pblapply(data, function(x) prcomp(x, center=T, scale.=F))
+data_proj <- pblapply(pca, function(x) t(x$rotation))
+# 1213 PCs
+pbmapply(x=data_proj, y=data_out, function(x,y) write.table(x, file=y))
+pbmapply(x=pca, y=sdev_out, function(x,y) write.table(x$sdev,file=y))
+```
+
+```{r plot sdev}
+library(ggplot2)
+sdev <- pblapply(pca, function(x) return(x$sdev/x$sdev[1]))
+sdev_df <- data.frame("Sdev" = unlist(sdev),
+                      "Dropout"=rep(dropout_percent,each=length(sdev[[1]])),
+                      "x"=1:length(sdev[[1]]))
+p1=ggplot(sdev_df[sdev_df$x<50,], aes(x=x, y=Sdev, color=factor(Dropout))) + geom_point() + geom_line(aes(group=Dropout)) + geom_hline(yintercept=0.1) + xlab("") + theme(text = element_text(size=15))
+
+linear_dim <- pbsapply(sdev, function(x) return(which(x<=0.1)[1]))
+ID <- linear_dim
+ID[is.na(ID)] <- ncol(data_proj[[1]])
+df <- data.frame("ID"=ID,
+                 "Dropout"=dropout_percent)
+p2=ggplot(df, aes(x=Dropout, y=ID)) + geom_point() + theme(text = element_text(size=15)) + geom_line()
+
+ggarrange(p1,p2, legend="right", widths=c(2,1))
+```
+
+```{r link between dropout, ID and asym}
+dimval <- c(2,5,10,20,30,40,50,60,70,80,90,seq(100,1000,by=50))
+k=50
+Asymmetry <- pblapply(data_proj, function(x) sapply(dimval, function(y) asymmetry_evaluation(x[1:y,])))
+df <- data.frame("Asymmetry"=unlist(Asymmetry),
+                 "Dropout"=rep(dropout_percent,each=length(dimval)),
+                 "Dimension"=dimval,
+                 "ID"=rep(ID,each=length(dimval)))
+ggplot(df, aes(x=Dropout,y=Asymmetry, color=Dimension)) +
+  geom_point() +
+  geom_line(aes(group=Dimension)) +
+  scale_color_viridis_c()
+p1=ggplot(df, aes(x=Dropout,y=Asymmetry, color=ID)) +
+  geom_point() +
+  geom_line(aes(group=Dimension)) +
+  scale_color_viridis_c() +
+  theme(text = element_text(size=15))
+ggplot(df[df$Dimension==max(df$Dimension),], aes(x=Dropout,y=ID, color=Asymmetry)) +
+  geom_point() +
+  geom_line() +
+  scale_color_viridis_c()
+ggplot(df, aes(x=Dimension,y=Asymmetry, color=ID)) +
+  geom_point() +
+  geom_line(aes(group=Dropout)) +
+  scale_color_viridis_c() +
+  theme(text = element_text(size=15))
+p2=ggplot(df, aes(x=Dimension,y=Asymmetry, color=Dropout)) +
+  geom_point() +
+  geom_line(aes(group=Dropout)) +
+  scale_color_viridis_c() +
+  theme(text = element_text(size=15))
+ggarrange(p1,p2, legend="right")
+```
+
+
