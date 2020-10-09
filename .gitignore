@@ -11,4 +11,6 @@
 *.tsv
 *.csv.gz
 *.mtx.gz
+*.h5seurat
+*.h5ad
 .ipynb_checkpoints
