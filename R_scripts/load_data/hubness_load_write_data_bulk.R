@@ -1,0 +1,53 @@
+# ====
+# Data loading
+# ====
+dim_nb = 1000
+cell_nb = 1000
+pval=2
+pcval=c(2,5,10,20,30,40,50,100,500,(dim_nb-1))
+kval=c(5,50,100,200)
+
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
+localization = "/Users/elise/Desktop/Github/Hubness_sc/results/"
+path = sapply(dropout_percent, function(x) paste0("bulk/",x,"/"))
+all_paths=lapply(path, function(z) unlist(lapply(X=pcval,
+                                                 FUN=function(x,y) paste0(localization,
+                                                                          z,
+                                                                          "kNN_occurence_",
+                                                                          y,
+                                                                          "_pca",
+                                                                          x,
+                                                                          "_minkow_bis.rds"),
+                                                 y=pval)))
+hubness_scores_data <- lapply(all_paths, function(x) lapply(x,function(y) {readRDS(y)})) # First 7 lists are pca2, then pca5 etc
+
+# ====
+# Data writing
+# ====
+
+hubness <- lapply(hubness_scores_data, function(x) data.frame("score"=unlist(x),
+                                                              "Dimension"=rep(pcval, each=length(pval)*length(kval)*cell_nb),
+                                                              "p"=rep(pval, each=length(kval)*cell_nb, times=length(pcval)),
+                                                              "k"=rep(kval, each=cell_nb, times=length(pcval)*length(pval))))
+# Reorder factor
+#hubness$Dimension <- factor(hubness$Dimension, levels = pcval)
+# Removing cells with hubness score = 0 DO NOT DO IT
+find_antihub_nb_per_condition <- function(hubness_df, cell_nb) {
+   pc_nb = length(unique(hubness_df$Dimension))
+   p_nb = length(unique(hubness_df$p))
+   k_nb = length(unique(hubness_df$k))
+   antihb = c()
+   for (i in 1:(pc_nb*p_nb*k_nb)) {
+      borne_inf=(cell_nb*(i-1)+1)
+      borne_sup=cell_nb*i
+      antihb = c(antihb,sum(hubness_df$score[borne_inf:borne_sup]==0))
+   }
+   return(antihb)
+}
+for (i in 1:length(hubness)) {
+   hubness[[i]]$Antihubs <- rep(find_antihub_nb_per_condition(hubness[[i]], cell_nb = cell_nb),each=cell_nb)
+}
+# Log to zoom on differences BAD IDEA
+#hubness_log <- hubness
+#hubness_log$score_log <- log(hubness_log$score + 1)
+rm(localization,find_antihub_nb_per_condition,path,all_paths)

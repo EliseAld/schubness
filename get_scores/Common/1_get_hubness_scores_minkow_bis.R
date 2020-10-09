@@ -3,9 +3,12 @@ library(pbapply)
 
 # MAKE THE DIST MATRIX WITH ALL ENTRIES EXCEPT DIAG INSTEAD OF UPPER TRI
 
-matrix <- read.table("/Users/elise/Desktop/GitHub/Hubness_sc/bulkRNAseq/simul_pca_readyforhubness95.csv")
+dataset <- c("Koh","KohTCC","Kumar","KumarTCC","SimKumar4easy","SimKumar4hard","SimKumar8hard","Trapnell","TrapnellTCC")
+matrix <- pblapply(dataset,
+                   function(x) read.table(paste0("/Users/elise/Desktop/GitHub/Hubness_sc/duo_clustering/pca/",x,"pca_readyforhubness.csv")))
 print("data loaded!")
-n_dim = nrow(matrix)
+n_dim = pbsapply(matrix,
+                 function(x) nrow(x))
 
 # matrix is PCs x cell
 
@@ -14,10 +17,12 @@ k.val <- c(5,50,100,200)
 
 # Range of p values for Lp norm
 p.val <- c(0.1,0.5,1,1.5,2,4,10)
+p.val <- 2
 
 # Range of PCs nb values
 pc.val <- c(2,5,10,20,30,40,50,100,500,1000,5000,n_dim-1)
-pc.val <- c(2,5,10,20,30,40,50,100,500,1000,n_dim-1)
+pc.val <- pblapply(n_dim,
+                   function(x) return(c(2,5,10,20,30,40,50,100,200,x-1)))
 
 # Write the function for the kNN graph
 distance_dim <- function(data,p) {
@@ -43,10 +48,11 @@ get_scores <- function(data,k.val,p.val,pc.val,name) {
     for (p in p.val) {
       dist.matrix <- distance_dim(data=data_pc,p=p)
       minkow <- pbapply::pblapply(X=k.val, FUN=function(x,y,z) {k.occurence(kNN(y,x),z)}, y=dist.matrix, z=data)
-      saveRDS(minkow, file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/results/simul/",name,"/kNN_occurence_",p,"_pca",pc,"_minkow_bis.rds"))
+      saveRDS(minkow, file=paste0("/Users/elise/Desktop/GitHub/Hubness_sc/results/",name,"/kNN_occurence_",p,"_pca",pc,"_minkow_bis.rds"))
       print(paste0(p, " pval done for PC",pc))
     }
   }
 }
-get_scores(matrix, k.val=k.val, p.val=p.val, pc.val=pc.val)
+pblapply(1:length(matrix),
+         function(x) get_scores(matrix[[x]], k.val=k.val, p.val=p.val, pc.val=pc.val[[x]], name=paste0("duo/",dataset[x])))
 
