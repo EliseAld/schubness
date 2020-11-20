@@ -1,0 +1,304 @@
+---
+title: "Do we have hubs?"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r libs, results="hide", include = FALSE}
+library(ggplot2, quietly = T)
+library(viridis, quietly = T)
+library(ggridges, quietly = T)
+library(scales, quietly = T)
+library(ggpubr, quietly = T)
+library(pbapply)
+library(knn.covertree)
+```
+
+```{r functions, include = FALSE}
+data_load <- function(path) {
+   source(file=path)
+   return(hubness)
+}
+dropout_percent <- c(0,5,10,20,30,40,50,75,80,85,90,95)
+data_hubness_bulk <- data_load("/Users/elise/Desktop/Github/Hubness_sc/R_scripts/load_data/hubness_load_write_data_bulk.R")
+data_pca_bulk <- pblapply(dropout_percent,
+                     function(x) read.table(paste0("/Users/elise/Desktop/Github/Hubness_sc/bulkRNAseq/bulkandrei/bulk_simul_pca_readyforhubness",x,".csv")))
+data_hubness_tcga <- data_load("/Users/elise/Desktop/Github/Hubness_sc/R_scripts/load_data/hubness_load_write_data_simul.R")
+data_pca_tcga <- pblapply(dropout_percent,
+                     function(x) read.table(paste0("/Users/elise/Desktop/Github/Hubness_sc/bulkRNAseq/BRCA/simul_pca_readyforhubness",x,".csv")))
+
+get_hub1 <- function(df,kval,pcval,pval) { # Maximum hubness score
+   max = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            max = c(max, max(val))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=max,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+plot_thd <- function(df,hub_val,p) {
+  plt <- ggplot(hubness, aes(x = score, y = Dimension, fill = Dimension))
+  plt + geom_density_ridges() +
+      theme_ridges() +
+      xlab("Hubness score") +
+      ylab("Dimension of the input space") +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==9047,], colour=hue_pal()(9)[9], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5000,], colour=hue_pal()(9)[8], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==1000,], colour=hue_pal()(9)[7], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==500,], colour=hue_pal()(9)[6], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==100,], colour=hue_pal()(9)[5], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==50,], colour=hue_pal()(9)[4], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==10,], colour=hue_pal()(9)[3], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5,], colour=hue_pal()(9)[2], inherit.aes = F) +
+      geom_segment(aes(x = GHubness, xend = GHubness, y = ymin, yend = ymax), hub_val[hub_val$Dimension==2,], colour=hue_pal()(9)[1], inherit.aes = F) +
+      facet_wrap( ~ k) +
+      ggtitle(paste0('Hubness maximum score of Lp norm across dimensions,\np=',p))
+  
+}
+get_hub2 <- function(df,kval,pcval,pval) { # Using the mean + 3*sd from Tomasev
+   x_thd = c()
+   hub_nb = c()
+   ymin = c()
+   ymax = c()
+   y_increment = 1
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            x_thd = c(x_thd, mean(val)+3*sd(val))
+            hub_nb = c(hub_nb, sum(val>=(mean(val)+3*sd(val))))
+            ymin = c(ymin,y_increment)
+            ymax = c(ymax,y_increment+1)
+         }
+      }
+     y_increment <- y_increment+1
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "Threshold"=x_thd,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   return(hub_val)
+}
+plot_thd_txt <- function(df,hub_val,p,method_index) {
+  plt <- ggplot(hubness, aes(x = score, y = Dimension, fill = Dimension))
+  plt + geom_density_ridges() +
+      theme_ridges() +
+      xlab("Hubness score") +
+      ylab("Dimension of the input space") +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==9047,], colour=hue_pal()(9)[9], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5000,], colour=hue_pal()(9)[8], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==1000,], colour=hue_pal()(9)[7], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==500,], colour=hue_pal()(9)[6], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==100,], colour=hue_pal()(9)[5], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==50,], colour=hue_pal()(9)[4], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==10,], colour=hue_pal()(9)[3], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==5,], colour=hue_pal()(9)[2], inherit.aes = F) +
+      geom_segment(aes(x = Threshold, xend = Threshold, y = ymin, yend = ymax), hub_val[hub_val$Dimension==2,], colour=hue_pal()(9)[1], inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      geom_text(aes(x = 7500, label = GHubness, y = ymin+0.5), hub_val, inherit.aes = F) +
+      facet_wrap( ~ k) +
+      ggtitle(paste0('Number of hubs with Lp norm across dimensions,\np=',p,',\nMethod ',method_index))
+  
+}
+get_hub3 <- function(df,kval,pcval,pval,log=F) { # Using the method from [1] >= 2k
+   if (log==T) {
+      hub_nb = c()
+      ymin = c()
+      ymax = c()
+      y_increment = 1
+      for (d in pcval) {
+         for (k in kval) {
+            for (p in pval) {
+               val = df$score[df$Dimension==d & df$p==p & df$k==k]
+               hub_nb = c(hub_nb, sum(val>=2*log(k)))
+               ymin = c(ymin,y_increment)
+               ymax = c(ymax,y_increment+1)
+            }
+         }
+      y_increment <- y_increment+1
+      }
+   }
+   else {
+      hub_nb = c()
+      ymin = c()
+      ymax = c()
+      y_increment = 1
+      for (d in pcval) {
+         for (k in kval) {
+            for (p in pval) {
+               val = df$score[df$Dimension==d & df$p==p & df$k==k]
+               hub_nb = c(hub_nb, sum(val>=2*k))
+               ymin = c(ymin,y_increment)
+               ymax = c(ymax,y_increment+1)
+            }
+         }
+      y_increment <- y_increment+1
+      }
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=hub_nb,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   hub_val$Threshold <- 2*hub_val$k
+   return(hub_val)
+}
+get_hub4 <- function(df,kval,pcval,pval) { # skewness
+   s = c()
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+            val = df$score[df$Dimension==d & df$p==p & df$k==k]
+            s = c(s, mean((val-mean(val))^3)/sd(val)^3)
+         }
+      }
+   }
+   skewness_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=s)
+   skewness_val$Dimension <- factor(skewness_val$Dimension, levels = pcval)
+   return(skewness_val)
+}
+plot_evol_pval <- function(hub_val,method_name,label.y) {
+  ggplot(hub_val, aes(x=factor(Dimension), y=GHubness, color=factor(p))) +
+   geom_point() +
+   ylab(label.y) +
+   xlab("Dimension") +
+   geom_line(aes(group=p),linetype='dotted') +
+   ggtitle(method_name) +
+   facet_wrap(~k)
+}
+plot_evol_pcval <- function(hub_val,method_name,label.y) {
+  ggplot(hub_val, aes(x=factor(p), y=GHubness, color=factor(Dimension))) +
+   geom_point() +
+   ylab(label.y) +
+   xlab("p") +
+   geom_line(aes(group=Dimension),linetype='dotted') +
+   ggtitle(method_name) +
+   facet_wrap(~k)
+}
+get_hub6 <- function(df,kval,pcval,pval) { # anti hubs
+   anti_hub = c()
+   for (d in pcval) {
+      for (k in kval) {
+         for (p in pval) {
+           anti_hub = c(anti_hub,unique(df$Antihubs[df$Dimension==d & df$p==p & df$k==k]))
+         }
+      }
+   }
+   hub_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=anti_hub)
+   hub_val$Dimension <- factor(hub_val$Dimension, levels = pcval)
+   return(hub_val)
+}
+fn_zarb <- function(knn_list) {
+   increment = 0
+   for (i in 1:nrow(knn_list)) {
+      for (j in 1:ncol(knn_list)) {
+         if (i %in% knn_list[knn_list[i,j],]) {
+            increment <- increment + 1 
+      }
+    }
+   }
+   return(1-increment/(nrow(knn_list)*ncol(knn_list)))
+}
+get_hub7 <- function(data,kval,pcval,pval) { #asymmetry
+  knn_graph <- lapply(pcval,
+                      function(x) lapply(kval,
+                                         function(y) knn.covertree::find_knn(t(data[1:x,]),y)))
+  knn_list <- lapply(knn_graph,
+                     function(x) lapply(x,
+                                        function(y) y$index))
+  result <- lapply(knn_list,
+                   function(x) sapply(x,
+                                      function(y) fn_zarb(y)))
+  asy_val <- data.frame("p"=rep(pval,times=length(pcval)*length(kval)),
+                         "k"=rep(rep(kval,each=length(pval)),times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)*length(pval)),
+                         "GHubness"=unlist(result))
+   asy_val$Dimension <- factor(asy_val$Dimension, levels = pcval)
+  return(asy_val)
+}
+```
+
+```{r figs}
+# Merge the dfs
+make_merge <- function(hubness,data,kval,pcval,pval,name,size) {
+#hub_max <- get_hub1(hubness, kval=kval,pcval=pcval,pval=pval)
+#hub_mean <- get_hub2(hubness, kval=kval,pcval=pcval,pval=pval)
+hub_k <- get_hub3(hubness, kval=kval,pcval=pcval,pval=pval)
+hub_skew <- get_hub4(hubness, kval=kval,pcval=pcval,pval=pval)
+#hub_anti <- get_hub6(hubness, kval=kval,pcval=pcval,pval=pval)
+hub_asym <- get_hub7(data, kval=kval,pcval=pcval,pval=pval)
+hub_k <- hub_k[,colnames(hub_skew)]
+#hub_mean <- hub_mean[,colnames(hub_skew)]
+#hub_max <- hub_max[,colnames(hub_skew)]
+hub_k$GHubness <- hub_k$GHubness*100/size
+#hub_mean$GHubness <- hub_mean$GHubness*100/size
+#hub_anti$GHubness <- hub_anti$GHubness*100/size
+#hub_max$GHubness <- hub_max$GHubness/size
+#hub_max$Method <- "Max"
+#hub_mean$Method <- "Mean+Sd"
+hub_k$Method <- "2k"
+hub_skew$Method <- "Skewness"
+#hub_anti$Method <- "Antihubs"
+hub_asym$Method <- "Asymmetry"
+hub <- rbind(hub_skew,hub_k,hub_asym)
+hub$Dataset <- name
+return(hub)
+}
+Dropout <- dropout_percent
+pcval_bulk <- c(2,5,10,20,30,40,50,100,500,999)
+pcval_tcga <- c(2,5,10,20,30,40,50,100,500,1000,1212)
+size_bulk <- rep(1000,length(dropout_percent))
+size_tcga <- rep(1213,length(dropout_percent))
+df_bulk <- pblapply(1:length(Dropout),
+             function(x) make_merge(data_hubness_bulk[[x]],data_pca_bulk[[x]],50,pcval_bulk,2,Dropout[x],size_bulk[x]))
+df_tcga <- pblapply(1:length(Dropout),
+             function(x) make_merge(data_hubness_tcga[[x]],data_pca_tcga[[x]],50,pcval_tcga,2,Dropout[x],size_tcga[x]))
+df_hub_bulk <- do.call(rbind,df_bulk)
+df_hub_tcga <- do.call(rbind,df_tcga)
+df <- list("bulk"=df_hub_bulk,
+           "tcga"=df_hub_tcga)
+df <- lapply(df,
+             function(x) {x$Dimension <- as.numeric(as.character(x$Dimension));
+             return(x)})
+df <- lapply(df,
+             function(x) {colnames(x)[colnames(x) == "Dataset"] <- "Dropout";
+             return(x)})
+# Viz
+p1=ggplot(df[[1]], aes(x=Dimension, y=GHubness)) + geom_line(aes(group=Dropout, color=Dropout)) + geom_point(size=0.1) + facet_wrap(~Method, scales = "free") + ylab(NULL)
+p2=ggplot(df[[2]], aes(x=Dimension, y=GHubness)) + geom_line(aes(group=Dropout, color=Dropout)) + geom_point(size=0.1) + facet_wrap(~Method, scales = "free") + ylab(NULL)
+ggarrange(p1,p2,labels=c("ARHCS4","BRCA_TCGA"), common.legend = T)
+#ggplot(df_hub[df_hub$Method=="Skewness",], aes(x=Dimension, y=GHubness)) + geom_line(aes(group=Dataset, color=Dataset)) + geom_point(alpha=0.2) + ylab("Skewness") + theme(text = element_text(size=20))
+```

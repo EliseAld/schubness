@@ -1,0 +1,229 @@
+---
+title: "Looking at QC metrics"
+output:
+  pdf_document: default
+  html_document: default
+---
+Method 3 : 2k (dim=50)
+Method 6 : anti hubs
+REV COV
+
+```{r functions, include = FALSE}
+library(pbapply)
+library(Seurat)
+library(ggpubr)
+data_load <- function(path) {
+   source(file=path)
+   return(hubness)
+}
+get_hub3 <- function(df,kval,pcval,log=F) { # Using the method from [1] >= 2k
+   if (log==T) {
+      hub_nb = c()
+      ymin = c()
+      ymax = c()
+      y_increment = 1
+      for (d in pcval) {
+         for (k in kval) {
+               val = df$score[df$Dimension==d & df$k==k]
+               hub_nb = c(hub_nb, sum(val>=2*log(k)))
+               ymin = c(ymin,y_increment)
+               ymax = c(ymax,y_increment+1)
+         }
+      y_increment <- y_increment+1
+      }
+   }
+   else {
+      hub_nb = c()
+      ymin = c()
+      ymax = c()
+      y_increment = 1
+      for (d in pcval) {
+         for (k in kval) {
+               val = df$score[df$Dimension==d & df$k==k]
+               hub_nb = c(hub_nb, sum(val>=2*k))
+               ymin = c(ymin,y_increment)
+               ymax = c(ymax,y_increment+1)
+         }
+      y_increment <- y_increment+1
+      }
+   }
+   hub_val <- data.frame("k"=rep(kval,times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)),
+                         "GHubness"=hub_nb,
+                         "ymin"=ymin,
+                         "ymax"=ymax)
+   hub_val$Threshold <- 2*hub_val$k
+   return(hub_val)
+}
+get_hub6 <- function(df,kval,pcval) { # anti hubs
+   anti_hub = c()
+   for (d in pcval) {
+      for (k in kval) {
+           anti_hub = c(anti_hub,unique(df$Antihubs[df$Dimension==d & df$k==k]))
+      }
+   }
+   hub_val <- data.frame("k"=rep(kval,times=length(pcval)),
+                         "Dimension"=rep(pcval,each=length(kval)),
+                         "GHubness"=anti_hub)
+   hub_val$Dimension <- factor(hub_val$Dimension, levels = pcval)
+   return(hub_val)
+}
+vlnplot_hub_spec_3 <- function(seurat, feature, cell_type) {
+  df <- cbind(seurat[[feature]],seurat[[cell_type]])
+  colnames(df) <- c("feature","cell_type")
+  gplot <- ggplot(df, aes(y=feature, x=cell_type, fill=cell_type)) + geom_violin(scale="area") + geom_jitter(size=0.5, color="black")
+  gplot +
+    xlab(NULL) +
+    ylab(feature) +
+    geom_hline(yintercept = mean(df$feature[df$cell_type == "normal"]),
+               col="#619CFF") +
+    geom_hline(yintercept = mean(df$feature[df$cell_type == "hub"]),
+               col="#00BA38") +
+    geom_hline(yintercept = mean(df$feature[df$cell_type == "antihub"]),
+               col="#F8766D") +
+    stat_compare_means(aes(label=..p.adj..), method = "t.test", p.adjust.method = "BH", label = "p.signif",
+                       comparisons = list(c("antihub","hub"),c("antihub","normal"),c("hub","normal")))
+}
+```
+
+```{r data, include=FALSE}
+dataset <- c("Koh","KohTCC","Kumar","KumarTCC","SimKumar4easy","SimKumar4hard","SimKumar8hard","Trapnell","TrapnellTCC","Zhengmix4eq","Zhengmix4uneq","Zhengmix8eq")
+data_hubness <- data_load("/Users/elise/Desktop/Github/Hubness_sc/Figure1_sc/hubness_load_write_data_duo.R")
+rm(hubness,i)
+data_in <- "/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/DimRedPaper/DuoClustering2018/sce_full/sce_full_"
+data_counts <- pblapply(dataset,
+                 function(x) {tmp <- readRDS(paste0(data_in,x,".rds"));
+                 tmp <- tmp@assays$data@listData$counts;
+                 hvg <- names(sort(apply(tmp,1,var),
+                                   decreasing = T)[1:min(1e4,nrow(tmp))]);
+                 tmp <- tmp[hvg,]
+                 return(tmp)})
+
+data_hubness <- lapply(seq(length(data_hubness)),
+                    function(x) {data_hubness[[x]]$cellID <- names(hubness_scores_data[[x]][[1]][[1]]);
+                    return(data_hubness[[x]])})
+rm(hubness_scores_data)
+
+hub_scores <- lapply(seq(length(data_hubness)),
+                       function(x) data_hubness[[x]]$score[data_hubness[[x]]$Dimension==50 & data_hubness[[x]]$k==10])
+
+hub_scores <- pblapply(seq(length(hub_scores)),
+                       function(x) {names(hub_scores[[x]]) <- data_hubness[[x]]$cellID[seq(length(hub_scores[[x]]))];
+                       return(hub_scores[[x]])})
+```
+
+```{r get the hubs with the different methods, include = FALSE}
+parameter <- data.frame(10,50)
+names(parameter) <- c("k","pc")
+
+hub3 <- lapply(seq(length(dataset)),
+                 function(x) colnames(data_counts[[x]])[hub_scores[[x]] >= 2*parameter$k])
+
+hub6 <- lapply(seq(length(dataset)),
+                 function(x) colnames(data_counts[[x]])[hub_scores[[x]]==0])
+```
+
+```{r make seurat, include=FALSE}
+seurat <- lapply(data_counts,CreateSeuratObject)
+seurat <- lapply(seq(length(seurat)),
+                   function(x) {seurat[[x]]$KThd <- c("normal","hub")[factor(colnames(seurat[[x]]) %in% hub3[[x]], levels = c("FALSE","TRUE"))];
+                   seurat[[x]]$Antihubs <- c("normal","antihub")[factor(colnames(seurat[[x]]) %in% hub6[[x]], levels = c("FALSE","TRUE"))];
+                   seurat[[x]][["percent.mt"]] <- PercentageFeatureSet(seurat[[x]], pattern = "^MT-");
+                   seurat[[x]][["percent.ribo"]] <- PercentageFeatureSet(seurat[[x]], pattern = c("^RPS","^RPL"))
+                   seurat[[x]][["Dropout_rate"]] <- mean(data_counts[[x]]==0)*100
+                   return(seurat[[x]])})
+seurat <- pblapply(seurat,
+                 function(x) {x$Hub_status="Normal";
+                 for (y in seq(ncol(x))) {
+                      x$Hub_status[y] <- ifelse(x$KThd[y]=="hub",
+                                                "Hub",
+                                                ifelse(x$Antihubs[y]=="antihub",
+                                                       "Antihub",
+                                                       "Normal"))};
+                 return(x)})
+# Make UMAP
+seurat <- lapply(seurat,NormalizeData)
+seurat <- lapply(seurat,ScaleData)
+seurat <- lapply(seurat,FindVariableFeatures)
+seurat <- lapply(seurat,function(x) RunPCA(x, verbose = F))
+seurat <- lapply(seurat,function(x) RunUMAP(x, dims=1:50))
+```
+
+```{r plot umap}
+#ggarrange(plotlist=lapply(seurat, function(x) DimPlot(x, reduction = "umap", group.by = "Hub_status")),
+#          labels=dataset,
+#          common.legend=T)
+
+idx_dataset=8
+reduction="umap"
+DimPlot(seurat[[idx_dataset]],
+        reduction=reduction,
+        group.by="Hub_status",
+        order="Hub") +
+  scale_color_viridis_d(direction=(-1))
+```
+
+```{r QC of hubs/anti hubs vs normal cells}
+qc_df <- seurat[[idx_dataset]]@meta.data
+
+# Dropout rate
+ggplot(qc_df, aes(x=Hub_status,
+                  y=Dropout_rate, fill=Hub_status)) +
+  geom_violin() +
+  scale_fill_viridis_d() +
+  stat_compare_means(method="t.test", label="p.signif", ref.group=".all.")
+
+# nfeature rate
+ggplot(qc_df, aes(x=Hub_status,
+                  y=nFeature_RNA, fill=Hub_status)) +
+  geom_violin() +
+  scale_fill_viridis_d() +
+  stat_compare_means(method="t.test", label="p.signif", ref.group=".all.")
+
+# ncount rate
+ggplot(qc_df, aes(x=Hub_status,
+                  y=nCount_RNA, fill=Hub_status)) +
+  geom_violin() +
+  scale_fill_viridis_d() +
+  stat_compare_means(method="t.test", label="p.signif", ref.group=".all.")
+
+# percent ribo rate
+ggplot(qc_df, aes(x=Hub_status,
+                  y=percent.ribo, fill=Hub_status)) +
+  geom_violin() +
+  scale_fill_viridis_d() +
+  stat_compare_means(method="t.test", label="p.signif", ref.group=".all.")
+
+# percent mito rate
+ggplot(qc_df, aes(x=Hub_status,
+                  y=percent.mt, fill=Hub_status)) +
+  geom_violin() +
+  scale_fill_viridis_d() +
+  stat_compare_means(method="t.test", label="p.signif", ref.group=".all.")
+
+# Dropout rate histo
+ggplot(qc_df, aes(Dropout_rate, fill=Hub_status)) +
+  geom_bar(position="dodge") +
+  scale_fill_viridis_d()
+
+# nfeature histo
+ggplot(qc_df, aes(nFeature_RNA, fill=Hub_status)) +
+  geom_bar(position="dodge") +
+  scale_fill_viridis_d()
+
+# ncount histo
+ggplot(qc_df, aes(nCount_RNA, fill=Hub_status)) +
+  geom_bar(position="dodge") +
+  scale_fill_viridis_d()
+
+# percent mito histo
+ggplot(qc_df, aes(percent.mt, fill=Hub_status)) +
+  geom_bar(position="dodge") +
+  scale_fill_viridis_d()
+
+# percent ribo histo
+ggplot(qc_df, aes(percent.ribo, fill=Hub_status)) +
+  geom_bar(position="dodge") +
+  scale_fill_viridis_d()
+```
+

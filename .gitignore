@@ -13,4 +13,10 @@
 *.mtx.gz
 *.h5seurat
 *.h5ad
+*.html
+*.png
+*.gif
+*.rda
+*.RDataTmp
 .ipynb_checkpoints
+.Rproj.user
