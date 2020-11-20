@@ -13,4 +13,5 @@
 *.mtx.gz
 *.h5seurat
 *.h5ad
+*.html
 .ipynb_checkpoints
