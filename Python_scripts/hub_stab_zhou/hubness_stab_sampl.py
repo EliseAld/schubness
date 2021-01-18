@@ -15,7 +15,8 @@ anndata2ri.activate()
 readRDS = ro.r['readRDS']
 path_rds = "/Users/elise/Desktop/GitHub/Hubness_sc/data/forTI/zhouDR/datasets/rds/"
 path_res = "/Users/elise/Desktop/GitHub/Hubness_sc/Python_scripts/hub_stab_zhou/"
-get_res_path = lambda path_res: f'{path_res}hub_stab_sampling_norm{do_norm}_scale{norm_scale}_{metric}_{clustering_algo}.png'
+get_res_path = lambda path_res: f'{path_res}hub_stab_sampling_norm{do_norm}_scale{norm_scale}_{metric}.png'
+get_res_path_csv = lambda path_res: f'{path_res}hub_stab_sampling_norm{do_norm}_scale{norm_scale}_{metric}.csv'
 
 #fixed params
 seed = 0
@@ -26,8 +27,6 @@ n_neighbors = 10
 norm_scale = True
 do_norm = 'duo'
 bootstrap_size = 0.9
-metric = 'euclidean'
-clustering_algo = 'leiden'
 fnames = ['gold_hematopoiesis-gates_olsson', 'gold_germline-human-female-weeks_li', 'gold_stimulated-dendritic-cells-LPS_shalek',
           'gold_germline-human-female_guo', 'gold_mESC-differentiation_hayashi', 'gold_developing-dendritic-cells_schlitzer',
           'gold_germline-human-male-weeks_li', 'gold_pancreatic-beta-cell-maturation_zhang', 'gold_human-embryos_petropoulos',
@@ -36,6 +35,7 @@ fnames = ['gold_hematopoiesis-gates_olsson', 'gold_germline-human-female-weeks_l
 colors = ['red', 'gold', 'chartreuse', 'deepskyblue']
 
 #vary euclidean
+metric = 'cosine'
 n_comps = (25, 50, 100, 500)
 
 
@@ -47,7 +47,7 @@ def recipe_duo(adata, do_log, renorm):
     keep = np.argsort(exprsn)[::-1][:5000]
     adata._inplace_subset_var(keep)
     if renorm:
-        sc.pp.normalize_total(adata,target_sum=1e4)
+        sc.pp.normalize_total(adata, target_sum=1e4)
 
 def recipe_seurat(adata, do_log, norm_scale):
     #same as scanpy clustering tutorial except initial cells/genes prefiltering /!\ sc.pp.recipe_seurat filters non log data ?
@@ -73,29 +73,27 @@ def recipe_zheng17(adata, do_log, norm_scale, n_top_genes=1000):
 
 def load_data(path):
     raw = readRDS(path)
-    adata_dict = {k:v for k, v in raw.items()}
+    adata_dict = {k: v for k, v in raw.items()}
     adata = anndata.AnnData(X=adata_dict['counts'])
     adata.uns['Order'] = adata_dict['groups_id'].iloc[:, 1].values
     del raw, adata_dict
     return adata
 
-def resampling(adata, bootstrap_size=bootstrap_size,n_iter=n_iter):
+def resampling(adata, bootstrap_size=bootstrap_size, n_iter=n_iter):
     adata_sampled = dict()
-    cell_iter = np.zeros((n_iter,adata.n_obs))
-    for iter in tqdm(range(n_iter)):
-        cell_bootstrap = np.random.uniform(0, 1, size=adata.n_obs)
-        cell_bootstrap[cell_bootstrap <= bootstrap_size] = 2
-        cell_bootstrap = cell_bootstrap == 2
-        cell_iter[iter, :] = cell_bootstrap
+    cell_iter = np.zeros((n_iter, adata.n_obs))
+    for iter in range(n_iter):
+        cell_bootstrap = np.random.choice(range(adata.n_obs), int(adata.n_obs*bootstrap_size), replace=False)
+        cell_iter[iter, cell_bootstrap] = 1
         obsm = {'X_pca': adata.obsm['X_pca'][cell_bootstrap]}
         adata_sampled[iter] = anndata.AnnData(adata.X[cell_bootstrap],
                                         obsm=obsm)
-        #sc.pp.neighbors(adata_sampled[iter], random_state=seed)
+        sc.pp.neighbors(adata_sampled[iter], random_state=seed)
     return adata_sampled, cell_iter
 
 def hub_retrieval(X, metric, k=n_neighbors):
     n_obs = X.shape[0]
-    hub = Hubness(k=k, metric=metric, random_state=seed, return_value='hubs')
+    hub = Hubness(k=k, metric=metric, random_state=seed, return_value='hubs', hubness=None, hubness_params=None)
     hub.fit(X)
     hub_id = np.repeat('norm', n_obs)
     hub_id[hub.score()] = 'hubs'
@@ -103,8 +101,7 @@ def hub_retrieval(X, metric, k=n_neighbors):
 
 def overlap_hubs(hubs_ref, hubs_sampled, cell_iter):
     hubs_ref_match = hubs_ref[cell_iter == 1]
-    size_overlap = [100*np.sum([(hubs_ref_match == 'hubs')[loop] and
-                                       (hubs_sampled == 'hubs')[loop] for loop in range(len(hubs_ref_match))])/
+    size_overlap = [100*np.sum([(hubs_ref_match == 'hubs')[loop] and (hubs_sampled == 'hubs')[loop] for loop in range(len(hubs_ref_match))])/
                             np.sum(hubs_ref == 'hubs')][0]
     return size_overlap
 
@@ -114,16 +111,19 @@ def overlap_hubs(hubs_ref, hubs_sampled, cell_iter):
 size_overlap_tot = np.zeros(shape=(len(fnames), len(n_comps)))
 for dim in n_comps:
     size_overlap = np.zeros(len(fnames))
-    print(metric, dim, clustering_algo)
+    print(metric, dim)
     #if np.array([get_res_path(path_res).split('/')[-1] in elt for elt in os.listdir(path_res)]).any(): #setting already computed
     #        continue
-    for fname in fnames:
+    for fname in tqdm(fnames):
         adata = load_data(path_rds+fname+'.rds')
         if dim < adata.shape[0]:
             start=time.time()
             ### preprocess###
             adata.X = scipy.sparse.csr_matrix(adata.X)
-            recipe_duo(adata, do_log, renorm=norm_scale)
+            if do_norm=='seurat':
+                recipe_seurat(adata, do_log, norm_scale=norm_scale)
+            if do_norm=='duo':
+                recipe_duo(adata, do_log, renorm=norm_scale)
             if scipy.sparse.issparse(adata.X):
                 adata.X = adata.X.toarray()
             sc.tl.pca(adata, n_comps=min(adata.X.shape[1]-1, min(len(adata.X)-1, dim)))
@@ -142,7 +142,10 @@ for dim in n_comps:
                 X_sampled = dict()
                 for key in adata_sampled.keys():
                     adata_sampled[key].X = scipy.sparse.csr_matrix(adata_sampled[key].X)
-                    recipe_duo(adata_sampled[key], do_log, renorm=norm_scale)
+                    if do_norm=='seurat':
+                        recipe_seurat(adata_sampled[key], do_log, norm_scale=norm_scale)
+                    if do_norm=='duo':
+                        recipe_duo(adata_sampled[key], do_log, renorm=norm_scale)
                     if scipy.sparse.issparse(adata.X):
                         adata_sampled[key].X = adata_sampled[key].X.toarray()
                     sc.tl.pca(adata_sampled[key], n_comps=min(adata_sampled[key].X.shape[1]-1, min(adata_sampled[key].X.shape[0]-1, dim)))
@@ -166,3 +169,4 @@ for dim in range(len(n_comps)):
     plt.scatter(np.repeat(dim+1, size_overlap_tot.shape[0]), size_overlap_tot[:, dim], c=colors[::-1][dim])
 plt.savefig(get_res_path(path_res))
 #plt.show()
+np.savetxt(X=size_overlap_tot, fname=get_res_path_csv(path_res))

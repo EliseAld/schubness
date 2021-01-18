@@ -69,14 +69,48 @@ settings <- c('normduo_scaleTrue_ncomps25_cosine_louvain', 'normduo_scaleTrue_nc
               'normduo_scaleTrue_ncomps500_euclidean_louvain', 'normduo_scaleTrue_ncomps500_euclidean_leiden',
               'normseurat_scaleTrue_ncomps500_euclidean_louvain', 'normseurat_scaleTrue_ncomps500_euclidean_leiden')
 # ====
-pblapply(datasets,
+pbapply::pblapply(datasets,
          function(dts) {print(dts);
            lapply(methods,
                   function(mtd) {if (file.exists(paste0(path,dts,"_",mtd,".h5ad"))) {
-                    Convert(paste0(path,dts,"_",mtd,".h5ad"),
+                    SeuratDisk::Convert(paste0(path,dts,"_",mtd,".h5ad"),
                             dest = "h5seurat", overwrite = TRUE, verbose = F);
                     file.remove(paste0(path,dts,"_",mtd,".h5ad"))}})})
 # ====
+get_weighted_relative_diff <- function(scores) {
+  weighted_relative_diff <- lapply(scores, function(x) {
+    tmp=data.frame("correlation"=(x[methods[methods!="nothing"],]$correlation -
+                                    x["nothing",]$correlation)*x["nothing",]$correlation,
+                   "featureimp_wcor"=(x[methods[methods!="nothing"],]$featureimp_wcor -
+                                        x["nothing",]$featureimp_wcor)*x["nothing",]$featureimp_wcor,
+                   "F1_branches"=(x[methods[methods!="nothing"],]$F1_branches -
+                                    x["nothing",]$F1_branches)*x["nothing",]$F1_branches);
+    rownames(tmp)=rownames(x)[rownames(x)!="nothing"];
+    colnames(tmp)=colnames(x);
+    return(tmp)})
+  return(weighted_relative_diff)
+}
+compare_byScore_w <- function(scores) {
+  # first normalize scores across methods for each dataset + apply unit proba density function
+  score_norm <- lapply(scores,
+                       function(x) {tmp<-normalize(x);
+                       tmp<-apply(tmp,2,dnorm);
+                       rownames(tmp)<-methods[methods!='nothing'];
+                       return(tmp)})
+  # arithmetic mean over datasets
+  avg_score <- sapply(methods[methods!='nothing'],
+                      function(x) {tmp<-sapply(score_norm,
+                                               function(y) y[x,]);
+                      rowMeans(tmp)})
+  data.frame(t(avg_score))
+}
+compare_allScore_w <- function(scores) {
+  avg_score <- compare_byScore_w(scores)
+  # geometric mean
+  data.frame("OverallScore"=apply(avg_score,
+                                  1,
+                                  function(x) exp(mean(log(x[x!=0])))))
+}
 make_paga_traj <- function(dataset_id) {
   if (file.exists(paste0(path,dataset_id, "_",methods[1],".h5seurat"))) {
     clustering_algo <- ifelse(length(grep("leiden",dataset_id))>0,"leiden","louvain")
@@ -246,6 +280,34 @@ scores_result <- lapply(scores_result,
                                             idx <- sapply(seq(length(x2)),
                                                           function(x3) idx[x3]=ifelse(is.null(x2[[x3]]),F,T));
                                             x2<-x2[idx]}))
+weighted_diff_score <- lapply(scores_result, function(x1)
+  lapply(x1, get_weighted_relative_diff))
+scores_w <- lapply(weighted_diff_score,
+                   function(x1) lapply(x1,
+                                       function(y) {tmp<-cbind(compare_byScore_w(y),compare_allScore_w(y));
+                                       data.frame("Score"=unlist(tmp),
+                                                  "Metric"=rep(colnames(tmp), each=nrow(tmp)),
+                                                  "Hub_reduction"=rep(rownames(tmp), times=ncol(tmp)))}))
+scores2_w <- lapply(weighted_diff_score,
+                    function(x1) {tmp <- lapply(seq(length(x1)),
+                                                function(idx) {tmp<-cbind(compare_byScore_w(x1[[idx]]),compare_allScore_w(x1[[idx]]));
+                                                data.frame("Score"=unlist(tmp),
+                                                           "Metric"=rep(colnames(tmp), each=nrow(tmp)),
+                                                           "Hub_reduction"=rep(rownames(tmp), times=ncol(tmp)),
+                                                           "Dimension"=factor(n_comps, levels=n_comps)[idx])});
+                    do.call(rbind,tmp)})
+scores2_w <- lapply(scores2_w,
+                    function(x) {tmp<-x;
+                    tmp$X<-gsub(25,1,
+                                gsub(50,2,
+                                     gsub(100,3,
+                                          gsub(500,4,tmp$Dimension))));
+                    tmp$Y<-gsub("dsl",1,
+                                gsub("ls",2,
+                                     gsub("ls_nicdm",3,
+                                          gsub("mp_normal",4,tmp$Hub_reduction))));
+                    return(tmp)})
+
 # Make score with all data or only the gold(remove 11, 29, 30)
 idx_rm <- c(6,10,11)
 gold_only <- F
@@ -362,22 +424,24 @@ ggplot(overallscore_single, aes(x=Dimension, y=Score, fill=Hub_reduction)) +
   scale_fill_viridis_d()
 dev.off()
 
-# Reproduce Jo's figure with Over all score and merge all preprocess to choose the best hub reduction
-scores_jo <- lapply(scores_result,
-                    function(preprocess) {datafr <- do.call(rbind,lapply(preprocess,
-                                                function(dim) {df <- do.call(rbind,lapply(dim,
-                                                                      function(score) data.frame("OverallScore"=apply(score,1,
-                                                                                                                      function(row) exp(mean(log(row[row!=0])))),
-                                                                                                 "Hub_reduction"=rownames(score))));
-                                                df$Dataset <- rep(dataset_choice, each=length(methods));
-                                                return(df)}));
-                    datafr$Dimension <- rep(n_comps, each=length(methods)*length(dataset_choice));
-                    return(datafr)})
-length_nrow <- nrow(scores_jo$`duo cosine louvain`)
-names_preprocess <- names(scores_jo)
-scores_jo <- do.call(rbind,scores_jo)
-scores_jo$Preprocess <- rep(names_preprocess, each=length_nrow)
-scores_jo$Preprocess2 <- paste(scores_jo$Preprocess,scores_jo$Dimension)
-scores_jo$Dimension <- factor(scores_jo$Dimension, levels=n_comps)
-ggplot(scores_jo[scores_jo$Preprocess==names_preprocess[1],], aes(y=OverallScore, x=Dimension, fill=Hub_reduction)) +
-  geom_boxplot()
+# Make summary figure with all datasets and only ID
+overall_ci <- do.call(rbind,tmp)
+overall_ci$Metric <- unname(sapply(overall_ci$Preprocess, function(x)
+  strsplit(x, " ")[[1]][2]))
+# remove rows with cosine dsl
+overall_ci <- overall_ci[!(overall_ci$Metric=="cosine" & 
+                             overall_ci$Hub_reduction=="dsl"),]
+
+ggplot(overall_ci, aes(x=Dimension, y=Score, fill=Hub_reduction)) + #3x5
+  geom_boxplot(outlier.shape=NA, alpha=0.6) +
+  geom_point(size=0.8,position=position_jitterdodge(jitter.width = 0.1),
+             aes(color=Hub_reduction, shape=Metric), fill="black") +
+  ylim(c(0.2,0.35)) +
+  scale_fill_brewer(palette="Set1") +
+  scale_color_brewer(palette="Set1") +
+  theme(panel.background = element_rect(fill="grey98"),
+        panel.grid = element_line(colour = "grey80"))
+
+stat.test = overall_ci %>%
+  group_by(Dimension) %>%
+  t_test(Score ~ Hub_reduction, ref.group = "nothing")

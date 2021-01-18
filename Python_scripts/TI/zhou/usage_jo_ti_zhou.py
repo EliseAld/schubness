@@ -15,7 +15,7 @@ import time
 from tqdm import tqdm
 import csv
 import warnings
-warnings.filterwarnings("ignore")
+#warnings.filterwarnings("ignore")
 
 anndata2ri.activate()
 
@@ -163,7 +163,8 @@ def ti_analysis(adata,true_labels,do_norm,norm_scale, do_log,do_pca,
         all_adata[method_name].obsm[method_name] = kneighbors_graph(X,
                                                             n_neighbors=n_neighbors,
                                                             hubness=hubness,
-                                                            hubness_params=hubness_params)
+                                                            hubness_params=hubness_params,
+                                                            metric=metric)
         sc.pp.neighbors(all_adata[method_name], n_neighbors=n_neighbors+1, use_rep=method_name)
         G, weights = generate_clustering_inputs(X=X,
                                                  metric=metric,
@@ -262,7 +263,7 @@ weighted=True
 norm_scale = True
 n_neighbors = 10
 seed = 0
-n_iter = 5-1
+n_iter = 10
 bootstrap_size = 0.95
 fnames = ['gold_hematopoiesis-gates_olsson', 'gold_germline-human-female-weeks_li', 'gold_stimulated-dendritic-cells-LPS_shalek',
           'gold_germline-human-female_guo', 'gold_mESC-differentiation_hayashi', 'gold_developing-dendritic-cells_schlitzer',
@@ -309,5 +310,3 @@ for metric, n_comps, do_norm, clustering_algo in params_list:
             n_iter=n_iter,
             bootstrap_size=bootstrap_size
         )
-
-

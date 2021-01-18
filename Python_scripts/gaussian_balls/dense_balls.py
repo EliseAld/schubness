@@ -6,10 +6,12 @@ import random
 from scipy import stats, special
 import math
 from skhubness import neighbors
+from skhubness import Hubness
 #from mlxtend.plotting import plot_decision_regions
 import matplotlib.patches as patches
-import leidenalg
-import scanpy as sc
+#import leidenalg
+#import scanpy as sc
+import networkx as nx
 
 # parameters
 seed = 0
@@ -23,7 +25,7 @@ original_dims = 10
 n_points = 10000
 density_ratio = 50
 n_points_test = 60
-k = 30
+k = 10
 cm = plt.get_cmap('plasma')
 n_gaussian = 5
 print('\n\nk='+str(k))
@@ -43,6 +45,19 @@ def hub_reduction(input_points, methods={'nothing':(None,None),
         #sc.pp.neighbors(samples_exp[method_name], n_neighbors=10, use_rep=method_name)
         #sc.tl.umap(samples_exp[method_name], n_components=2, random_state=seed)
     return samples_exp
+
+def hub_eval(input_points, methods={'nothing':(None,None),
+                   'mp_normal':('mp',{'method': 'normal'}),
+                   'ls':('ls',None),
+                   'ls_nicdm':('ls',{'method': 'nicdm'}),
+                   'dsl':('dsl',None)
+                   }, k=k):
+    skewness = []
+    for method_name, (hubness, hubness_params) in tqdm(methods.items()):
+        hub = Hubness(k=10, hubness=hubness, hubness_params=hubness_params)
+        hub.fit(input_points)
+        skewness.append(hub.score())
+    return skewness
 
 def plot_id(arr, group_id, idx0=0, idx1=1, title=None, colors = colors):
     for group in np.unique(group_id):
@@ -187,6 +202,10 @@ print("sample generated")
 samples_hubred = hub_reduction(samples_skimmed)
 print("sample hub-corrected")
 
+# eval skewness
+skewness = hub_eval(samples_skimmed)
+skewness
+
 # Plot the kNN neighbors
 adj_matrix = {k:v for k, v in zip(samples_hubred.keys(), [samples_hubred[method].toarray() for method in samples_hubred.keys()])}
 neighbors_id = dict()
@@ -248,6 +267,35 @@ print("kNN graph repartition visualized")
 #y = np.array([int(points_right_hyperplan[loop]) for loop in range(len(points_right_hyperplan))])
 #knn_comparison(x, y)
 
+# kNN graph viz
+# get the in and out degrees of all points
+out_degree = dict()
+in_degree = dict()
+for key in adj_matrix.keys():
+    out_degree[key] = dict()
+    in_degree[key] = dict()
+    for idx in tqdm(range(n_obs)):
+        out_degree[key][idx] = [i for i, e in enumerate(adj_matrix[key][idx, :]) if e==True]
+        in_degree[key][idx] = [i for i, e in enumerate(adj_matrix[key][:, idx]) if e==True]
+# make the graph
+for key in adj_matrix.keys():
+    rows, cols = np.where(adj_matrix[key] == 1)
+    edges = zip(rows.tolist(), cols.tolist())
+    gr = nx.Graph()
+    gr.add_edges_from(edges)
+    in_degree_weight = []
+    for idx in range(n_obs):
+        in_degree_weight.append(len(in_degree[key][idx]))
+    nx.draw_networkx(gr, node_size=in_degree_weight[0:1000],
+                     node_color=[int(points_right_hyperplan[loop]) for loop in range(n_obs)][0:1000],
+                     cmap='plasma', width=0.1, edge_color='gray', with_labels=False, nodelist=range(1000))
+    #nx.drawing.nx_pylab.draw_kamada_kawai(gr, node_size=in_degree_weight[0:1000],
+    #                                      node_color=[int(points_right_hyperplan[loop]) for loop in range(n_obs)][0:1000],
+    #                                      cmap='plasma', width=0.1, edge_color='gray', with_labels=False,
+    #                                      nodelist=range(1000))
+    plt.savefig("/Users/elise/Desktop/GitHub/Hubness_sc/Python_scripts/gaussian_balls/figs_dense_10/DenseGaussian_step1_kNNgraph_hub"+key+"_k"+str(k)+".png")
+    plt.show()
+
 
 # Density
 # Pick n random points in each region
@@ -285,15 +333,6 @@ value_base = (density_left - density_right)/(eta_d/k/v_d)
 print("true log-corrected density difference is:" + str(value_base))
 
 # Density estimate
-# get the in and out degrees of all points
-out_degree = dict()
-in_degree = dict()
-for key in adj_matrix.keys():
-    out_degree[key] = dict()
-    in_degree[key] = dict()
-    for idx in tqdm(range(n_obs)):
-        out_degree[key][idx] = [i for i, e in enumerate(adj_matrix[key][idx, :]) if e==True]
-        in_degree[key][idx] = [i for i, e in enumerate(adj_matrix[key][:, idx]) if e==True]
 # Plot the distribution of in degree for each key
 for key in adj_matrix.keys():
     plt.hist([len(in_degree[key][loop]) for loop in range(n_obs)])

@@ -1,0 +1,52 @@
+---
+title: "PCA obj"
+output: html_document
+---
+
+```{r libs & paths}
+library(ggplot2)
+library(dplyr)
+library(pbapply)
+data_in<- "/Users/elise/Desktop/Thèse/scRNAseq/Data_sc/DimRedPaper/DuoClustering2018/sce_full/sce_full_"
+dataset <- c("Koh","KohTCC","Kumar","KumarTCC","SimKumar4easy","SimKumar4hard","SimKumar8hard","Trapnell","TrapnellTCC","Zhengmix4eq","Zhengmix4uneq","Zhengmix8eq")
+pca_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/Figure1_sc/pca_scaled/"
+sdev_out <- "/Users/elise/Desktop/GitHub/Hubness_sc/Figure1_sc/pca_scaled/sdev_"
+```
+
+```{r functions}
+filter <- function(df) {
+  feature <- apply(df,2,function(x) sum(x!=0, na.rm = T))
+  count <- apply(df,2,function(x) sum(x, na.rm=T))
+  print(plot(feature,count))
+}
+log_transfo <- function(data) {
+  data <- log10(data+1)
+  return(data)
+}
+```
+
+```{r do PCA}
+# load data while keeping only 10k HVG
+data <- pblapply(dataset,
+                 function(x) {tmp <- readRDS(paste0(data_in,x,".rds"));
+                 tmp <- tmp@assays$data@listData$counts;
+                 hvg <- names(sort(apply(tmp,1,var),
+                                   decreasing = T)[1:min(1e4,nrow(tmp))]);
+                 tmp <- tmp[hvg,]
+                 return(tmp)})
+pblapply(data,filter)
+pbsapply(data,dim)
+#pblapply(1:length(data),
+#         function(x) write.table(data[[x]], file=paste0(data_out,dataset[x],".csv")))
+
+# Log transfo
+data <- pblapply(data, function(x) log_transfo(x))
+# PCA
+pca <- pblapply(data, function(x) prcomp(x, center=T, scale.=T))
+data_proj <- pblapply(pca, function(x) t(x$rotation))
+
+pblapply(1:length(data_proj),
+         function(x) write.table(data_proj[[x]], file=paste0(pca_out,dataset[x],"_pca_readyforhubness.csv")))
+pblapply(1:length(data_proj),
+          function(x) write.table(pca[[x]]$sdev,file=paste0(sdev_out,dataset[x],".csv")))
+```

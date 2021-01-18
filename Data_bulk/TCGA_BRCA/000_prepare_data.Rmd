@@ -1,0 +1,30 @@
+---
+title: "Bulk with varying degrees of dropout"
+output: html_document
+---
+
+```{r load data, include = FALSE}
+library(biomaRt)
+data_brca <- read.csv("/Users/elise/Desktop/GitHub/Hubness_sc/Data_bulk/TCGA_BRCA/brca.csv", row.names=1)
+data_brca <- data_brca[1:57760,]
+
+gene.names=data.frame("ensemblID"=rownames(data_brca))
+gene.names$ensembl <- gsub('\\..+$', '', gene.names$ensembl)
+ensembl <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+genemap <- getBM( attributes = c("ensembl_gene_id", "entrezgene_id", "hgnc_symbol"),
+                  filters = "ensembl_gene_id",
+                  values = gene.names$ensembl,
+                  mart = ensembl )
+idx <- match( gene.names$ensembl, genemap$ensembl_gene_id )
+gene.names$hgnc_symbol <- genemap$hgnc_symbol[idx]
+rownames(gene.names) <- gene.names$ensemblID
+gene.names <- gene.names[rownames(data_brca),]
+bool_rm <- gene.names$hgnc_symbol=="" | is.na(gene.names$hgnc_symbol) | duplicated(gene.names$hgnc_symbol) | is.null(gene.names$hgnc_symbol)
+
+data_brca <- data_brca[!bool_rm,]
+rownames(data_brca) <- gene.names$hgnc_symbol[!bool_rm]
+
+write.csv(data_brca, file="/Users/elise/Desktop/GitHub/Hubness_sc/Data_bulk/TCGA_BRCA/brca.csv")
+```
+
+

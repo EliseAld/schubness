@@ -13,7 +13,7 @@ import time
 from tqdm import tqdm
 import csv
 import warnings
-warnings.filterwarnings("ignore")
+#warnings.filterwarnings("ignore")
 
 def getNclusters(adata, G, n_clusters, seed, clustering_algo, flavor, weights, range_min=0, range_max=3, max_steps=20):
     this_step = 0
@@ -159,7 +159,8 @@ def ti_analysis(adata,true_labels,do_norm,norm_scale, do_log,do_pca,
         all_adata[method_name].obsm[method_name] = kneighbors_graph(X,
                                                             n_neighbors=n_neighbors,
                                                             hubness=hubness,
-                                                            hubness_params=hubness_params)
+                                                            hubness_params=hubness_params,
+                                                            metric=metric)
         sc.pp.neighbors(all_adata[method_name], n_neighbors=n_neighbors+1, use_rep=method_name)
         G, weights = generate_clustering_inputs(X=X,
                                                  metric=metric,
