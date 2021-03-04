@@ -5,7 +5,7 @@
 #' @param n_val range of values for the parameter n
 #' @param thd percentage of increment in reverse coverage size below which we consider we reached a plateau (default set to 1)
 
-#' @return hubness magnitude evaluator
+#' @return number of hubs
 
 #' @example hubs <- names(sort(score, decreasing = T)[1:get_hub_nb(data, k, score, n_val, thd)])
 
