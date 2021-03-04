@@ -11,15 +11,9 @@
 
 ### Load librairies
 library(RANN)
+source("~/evaluation_common_functions.R")
 
 ### Functions to define hubs via the reverse coverage method
-# Make the kNN graph
-kNN_ <- function(data, k) {
-  k.nn <- RANN::nn2(t(data[1:n_dim,]), k=k+1)$nn.idx
-  k.nn <- k.nn[, 2:(k+1)]
-  return(k.nn)
-}
-
 # Calculate the size of the reverse coverage of specific cells
 rev_cov_hub <- function(data, k, score, n) {
   knn_graph = kNN_(data, k)

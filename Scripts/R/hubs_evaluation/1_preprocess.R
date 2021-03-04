@@ -6,10 +6,7 @@
 #' @example pca <- data_PCA(data_prePCA(data))
 
 ### Functions
-sparsity <- function(data) { # gene x cell matrix
-  return(sum(data==0)/ncol(data)/nrow(data)*100)
-}
-
+source("~/evaluation_common_functions.R")
 data_prep <- function(data) {
   data <- log10(data+1)
   return(data)

@@ -7,6 +7,7 @@
 #' @example splatter_data <- splatSimDropout(data, 10)
 
 ### Functions to generate dropout
+source("~/evaluation_common_functions.R")
 # Generate random dropout
 generate_dropout <- function(data, dropout_percent) {
   if (dropout_percent==0) {
@@ -57,9 +58,4 @@ splatSimDropout <- function(data, dropout_percentage) {
 
 logistic <- function(x, x0, k) {
     1 / (1 + exp(-k * (x - x0)))
-}
-
-# Count the sparsity
-sparsity <- function(data) { # gene x cell matrix
-  return(sum(data==0)/ncol(data)/nrow(data)*100)
 }

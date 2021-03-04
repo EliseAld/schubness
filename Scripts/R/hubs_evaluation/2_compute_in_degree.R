@@ -8,15 +8,9 @@
 
 ### Load librairies
 library(RANN)
+source("~/evaluation_common_functions.R")
 
 #### Functions
-# Make the kNN graph
-kNN_ <- function(data, k) {
-  k.nn <- RANN::nn2(t(data[1:n_dim,]), k=k+1)$nn.idx
-  k.nn <- k.nn[, 2:(k+1)]
-  return(k.nn)
-}
-
 # Get the in-degree from the kNN graph
 k.occurence_ <- function(k.nn) {
   occurence <- sapply(seq(nrow(k.nn)), function(x) sum(k.nn==x))
