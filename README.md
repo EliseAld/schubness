@@ -1,29 +1,35 @@
-Hubness_sc
+schubness
 ====
 
-Hubness on single-cell RNA sequencing data
+This repository contains the data and the scripts used in the manuscript "Hubness reduction improves downstream analyses of single-cell transcriptomic data" in which we study the hubness phenomenon and related observations in single-cell RNA sequencing data
 
-Steps
+
+Aims
 -----------
-1. Do we have hubs in scRNAseq ?
+1. Evaluate hubs in sequencing data
 
-(1a) Measuring hubness in sequencing data & define hubs
+(1a) Measuring hubness & define hubs
 
-(1b) Are hubs & antihubs different ?
+(1b) Study the nature of hubs & antihubs
 
-(1c) Is hubness sensitive to dropout ?
+(1c) Understand the parameters influencing hubness
 
-2. Can we use hubs to enhance the single-cell analysis ?
+2. Take advantage of hubs to improve the analysis
 
 (2a) Clustering
 
-(2b) TI
+(2b) Trajectory Inference
 
 (2c) Visualisation
 
 
-Bibliography
+Scripts
 -----------
-[1] https://www.sciencedirect.com/science/article/pii/S0925231215004336
+All scripts used to produced the figures in the manuscript are available in this repository and are organized by experiment and by language (either R or python).
 
-[2] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6284580/
+
+ Data
+-----------
+We used public datasets and regrouped them in a Zenodo repository here.
+
+
