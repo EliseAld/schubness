@@ -220,3 +220,79 @@ def trustworthiness(X, X_embedded, metric='euclidean'):
     t = 1.0 - t * (2.0 / (n_samples * n_neighbors *
                           (2.0 * n_samples - 3.0 * n_neighbors - 1.0)))
     return t
+
+
+def natural_pca(data, metric):
+    pairwise_dist = metrics.pairwise_distances(data, metric=metric)
+    nPC = pairwise_dist.shape[0]
+    natural_PC = np.zeros(shape=(2, nPC), dtype=int)
+    for i in range(nPC):
+        if i == 0:
+            natural_PC[:, i] = [np.where(pairwise_dist == np.amax(pairwise_dist))[0].tolist()[0], np.where(pairwise_dist == np.amax(pairwise_dist))[1].tolist()[0]]
+            pairwise_dist[natural_PC[0, i], natural_PC[1, i]] = 0
+            pairwise_dist[natural_PC[1, i], natural_PC[0, i]] = 0
+        else:
+            dist_to_consider = pairwise_dist[[k.tolist()[0] for k in natural_PC[:, :i]]]
+            candidates_i = [np.where(pairwise_dist == np.amax(dist_to_consider))[0].tolist()[0], np.where(pairwise_dist == np.amax(dist_to_consider))[1].tolist()[0]]
+            natural_PC[0, i] = [k for k in candidates_i if k not in [t.tolist()[0] for t in natural_PC[:, :i]]][0]
+            dist_to_consider0 = [max(pairwise_dist[natural_PC[0, i], natural_PC[0, k]],
+                                     pairwise_dist[natural_PC[0, k], natural_PC[0, i]]) for k in range(i)]
+            dist_to_consider1 = [max(pairwise_dist[natural_PC[0, i], natural_PC[1, k]],
+                                     pairwise_dist[natural_PC[1, k], natural_PC[0, i]]) for k in range(i)]
+            dist_to_consider = np.append(dist_to_consider0, dist_to_consider1)
+            idx = np.where(dist_to_consider == np.amin(dist_to_consider))[0].tolist()[0]
+            if idx < i:
+                natural_PC[1, i] = natural_PC[0, idx]
+            else:
+                natural_PC[1, i] = natural_PC[1, idx-i]
+            for k in range(i):
+                pairwise_dist[natural_PC[0, k], natural_PC[0, i]] = 0
+                pairwise_dist[natural_PC[1, k], natural_PC[0, i]] = 0
+                pairwise_dist[natural_PC[0, i], natural_PC[0, k]] = 0
+                pairwise_dist[natural_PC[0, i], natural_PC[1, k]] = 0
+                pairwise_dist[natural_PC[0, k], natural_PC[1, i]] = 0
+                pairwise_dist[natural_PC[1, k], natural_PC[1, i]] = 0
+                pairwise_dist[natural_PC[1, i], natural_PC[0, k]] = 0
+                pairwise_dist[natural_PC[1, i], natural_PC[1, k]] = 0
+            pairwise_dist[natural_PC[0, i], natural_PC[1, i]] = 0
+            pairwise_dist[natural_PC[1, i], natural_PC[0, i]] = 0
+    return natural_PC
+
+
+def QDM(input, embedding, metric):
+    useful_points = natural_pca(input, metric)
+    dis_i = metrics.pairwise_distances(input, metric=metric)
+    dis_o = metrics.pairwise_distances(embedding, metric=metric)
+    ravel_i = []
+    ravel_o = []
+    for i in range(useful_points.shape[1]):
+        ravel_i.append(dis_i[useful_points[0, i], useful_points[1, i]])
+        ravel_o.append(dis_o[useful_points[0, i], useful_points[1, i]])
+    corr = np.corrcoef(ravel_i, ravel_o)
+    return corr[0, 1]
+
+
+def QNP(input, embedding, metric, k):
+    NN = NearestNeighbors(n_neighbors=k, metric=metric)
+    neigh_i = NN.fit(input).kneighbors(return_distance=False)
+    neigh_o = NN.fit(embedding).kneighbors(return_distance=False)
+    qnp = np.sum([len(np.intersect1d(neigh_i[i, :], neigh_o[i, :])) for i in range(neigh_i.shape[0])])/k/input.shape[0]
+    return qnp
+
+
+def QGC(input, embedding, metric, label, k):
+    NN = NearestNeighbors(n_neighbors=k, metric=metric)
+    qgc = np.zeros((2, len(np.unique(label))), dtype=int)
+    neigh_i = NN.fit(input).kneighbors(return_distance=False)
+    neigh_o = NN.fit(embedding).kneighbors(return_distance=False)
+    for idx, clust in enumerate(np.unique(label)):
+        n_clust = np.sum(label == clust)
+        c_i = []
+        c_o= []
+        for i in range(input.shape[0]):
+            if label[i] == clust:
+                c_i.append(np.sum(label[neigh_i[i, :]] == clust))
+                c_o.append(np.sum(label[neigh_o[i, :]] == clust))
+        qgc[0, idx] = np.sum(c_i)/k/n_clust
+        qgc[1, idx] = np.sum(c_o)/k/n_clust
+    return qgc
