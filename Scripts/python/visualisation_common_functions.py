@@ -222,9 +222,10 @@ def trustworthiness(X, X_embedded, metric='euclidean'):
     return t
 
 
-def natural_pca(data, metric):
+def natural_pca(data, metric, nPC):
     pairwise_dist = metrics.pairwise_distances(data, metric=metric)
-    nPC = pairwise_dist.shape[0]
+    if nPC is None:
+        nPC = pairwise_dist.shape[0]
     natural_PC = np.zeros(shape=(2, nPC), dtype=int)
     for i in range(nPC):
         if i == 0:
@@ -259,8 +260,8 @@ def natural_pca(data, metric):
     return natural_PC
 
 
-def QDM(input, embedding, metric):
-    useful_points = natural_pca(input, metric)
+def QDM(input, embedding, metric='euclidean', nPC=None):
+    useful_points = natural_pca(input, metric, nPC=nPC)
     dis_i = metrics.pairwise_distances(input, metric=metric)
     dis_o = metrics.pairwise_distances(embedding, metric=metric)
     ravel_i = []
@@ -272,7 +273,7 @@ def QDM(input, embedding, metric):
     return corr[0, 1]
 
 
-def QNP(input, embedding, metric, k):
+def QNP(input, embedding, k, metric='euclidean'):
     NN = NearestNeighbors(n_neighbors=k, metric=metric)
     neigh_i = NN.fit(input).kneighbors(return_distance=False)
     neigh_o = NN.fit(embedding).kneighbors(return_distance=False)
@@ -288,7 +289,7 @@ def QGC(input, embedding, metric, label, k):
     for idx, clust in enumerate(np.unique(label)):
         n_clust = np.sum(label == clust)
         c_i = []
-        c_o= []
+        c_o = []
         for i in range(input.shape[0]):
             if label[i] == clust:
                 c_i.append(np.sum(label[neigh_i[i, :]] == clust))

@@ -199,7 +199,7 @@ def ti_analysis(adata, true_labels, do_norm, norm_scale, do_log, do_pca,
                 sc.tl.paga(adata_sampled, groups="louvain")
             all_iter[method_name]['iter'+str(iter)] = adata_sampled.uns["paga"]["connectivities_tree"]
     print('\t\t\tPAGA stability pipeline:', round((time.time()-start)/60, 2), 'mn')
-    for method_name in all_iter.keys():
+    for method_name in all_adata.keys():
         if method_name == "nothing":
             all_adata[method_name] = anndata.AnnData(X=all_adata[method_name].X,
                                                      uns={'Order': all_adata[method_name].uns['Order'],
