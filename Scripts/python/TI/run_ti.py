@@ -3,6 +3,7 @@ import os
 from natsort import natsorted
 import pandas as pd
 import anndata2ri
+import anndata
 import scipy
 import louvain
 import leidenalg
@@ -11,16 +12,17 @@ import numpy as np
 import scanpy as sc
 import time
 import warnings
+from tqdm import tqdm
+import csv
 from benchmark_common_functions import getNclusters, generate_clustering_inputs, recipe_duo, recipe_seurat, load_h5ad, load_rds
-from visualisation_common_functions import _binary_search_perplexity, _joint_probabilities, _kl_divergence, fuzzy_simplicial_set, cross_entropy, trustworthiness
 warnings.filterwarnings("ignore")
 
 anndata2ri.activate()
 
 
-def viz_analysis(adata, do_norm, norm_scale, do_log, do_pca,
-                 n_clusters, metric, weighted,  # weighted adjmat for louvain/leiden clustering ?
-                 seed, n_comps, clustering_algo,):
+def ti_analysis(adata, true_labels, do_norm, norm_scale, do_log, do_pca,
+                n_clusters, metric, weighted,  # weighted adjmat for louvain/leiden clustering ?
+                seed, n_comps, clustering_algo, n_iter, bootstrap_size):
     hubness_methods = {'nothing': (None, None),
                        'mp_normal': ('mp', {'method': 'normal'}),
                        'ls': ('ls', None),
@@ -37,7 +39,7 @@ def viz_analysis(adata, do_norm, norm_scale, do_log, do_pca,
             recipe_duo(adata, do_log, renorm=norm_scale)
             # print(f'\t\tduo norm retained {adata.X.shape[1]} genes')
         else:
-            raise ValueError("do_norm not in duo, seurat")
+            raise ValueError("do_norm not in 'duo', seurat'")
     if scipy.sparse.issparse(adata.X):
         adata.X = adata.X.toarray()
     if do_log and not(type(do_norm) is str):
@@ -77,8 +79,6 @@ def viz_analysis(adata, do_norm, norm_scale, do_log, do_pca,
         elif clustering_algo == "louvain":
             sc.tl.louvain(all_adata[kernel], resolution=resol, use_weights=weighted, random_state=seed)
             sc.tl.paga(all_adata[kernel], groups="louvain")
-        sc.pl.paga(all_adata[kernel], show=False, random_state=seed, plot=False)
-        sc.tl.umap(all_adata[kernel], init_pos="paga", random_state=seed)
     for method_name, (hubness, hubness_params) in hubness_methods.items():
         all_adata[method_name] = adata.copy()
         all_adata[method_name].obsp['connectivities'] = kneighbors_graph(X,
@@ -96,7 +96,7 @@ def viz_analysis(adata, do_norm, norm_scale, do_log, do_pca,
         all_adata[method_name].uns['neighbors'] = {'connectivities_key': 'connectivities',
                                                    'distances_key': 'distances',
                                                    'params': {'n_neighbors': n_neighbors,
-                                                              'method': 'umap',
+                                                              'method': method_name,
                                                               'metric': metric}}
         G, weights = generate_clustering_inputs(X=X,
                                                 metric=metric,
@@ -124,9 +124,99 @@ def viz_analysis(adata, do_norm, norm_scale, do_log, do_pca,
             all_adata[method_name].obs['leiden'] = pd.Categorical(values=clus.astype('U'),
                                                                   categories=natsorted(map(str, np.unique(clus))),)
             sc.tl.paga(all_adata[method_name], groups="leiden")
-        sc.pl.paga(all_adata[method_name], show=False, random_state=seed, plot=False)
-        sc.tl.umap(all_adata[method_name], init_pos="paga", random_state=seed)
     print('\t\t\tHubness and PAGA full pipeline:', round((time.time()-start)/60, 2), 'mn')
+    start = time.time()
+    ### PAGA stab ###
+    all_iter = dict()
+    cell_iter = dict()
+    feat_iter = dict()
+    for method_name, (hubness, hubness_params) in hubness_methods.items():
+        all_iter[method_name] = dict()
+        cell_iter[method_name] = np.zeros((n_iter, adata.n_obs))
+        feat_iter[method_name] = np.zeros((n_iter, adata.n_vars))
+        for iter in tqdm(range(n_iter)):
+            feat_bootstrap = np.random.uniform(0, 1, size=adata.n_vars)
+            feat_bootstrap[feat_bootstrap <= bootstrap_size] = 0
+            feat_bootstrap[feat_bootstrap > bootstrap_size] = 1
+            feat_bootstrap = feat_bootstrap == 0
+            cell_bootstrap = np.random.uniform(0, 1, size=adata.n_obs)
+            cell_bootstrap[cell_bootstrap <= bootstrap_size] = 0
+            cell_bootstrap[cell_bootstrap > bootstrap_size] = 1
+            cell_bootstrap = cell_bootstrap == 0
+            cell_iter[method_name][iter, :] = cell_bootstrap
+            feat_iter[method_name][iter, :] = feat_bootstrap
+            uns = {'Order': true_labels[cell_bootstrap]}
+            adata_sampled = anndata.AnnData(adata.X[cell_bootstrap][:, feat_bootstrap],
+                                            uns=uns)
+            n_clusters2 = len(np.unique(adata_sampled.uns['Order']))
+            if do_pca:
+                sc.tl.pca(adata_sampled, n_comps=min(adata_sampled.X.shape[1]-1, min(len(adata_sampled.X)-1, n_comps)))
+                X2 = adata_sampled.obsm['X_pca']
+            else:
+                X2 = adata_sampled.X
+            adata_sampled.obsp["connectivities"] = kneighbors_graph(X2,
+                                                                    n_neighbors=n_neighbors,
+                                                                    hubness=hubness,
+                                                                    hubness_params=hubness_params,
+                                                                    metric=metric,
+                                                                    mode="connectivity")
+            adata_sampled.obsp["distances"] = kneighbors_graph(X2,
+                                                               n_neighbors=n_neighbors,
+                                                               hubness=hubness,
+                                                               hubness_params=hubness_params,
+                                                               metric=metric,
+                                                               mode="distance")
+            adata_sampled.uns['neighbors'] = {'connectivities_key': 'connectivities',
+                                              'distances_key': 'distances',
+                                              'params': {'n_neighbors': n_neighbors,
+                                                         'method': method_name,
+                                                         'metric': metric}}
+            G2, weights2 = generate_clustering_inputs(X=X2,
+                                                      metric=metric,
+                                                      n_neighbors=n_neighbors,
+                                                      weighted=weighted,
+                                                      seed=seed,
+                                                      hubness=hubness,
+                                                      hubness_params=hubness_params)
+            resol2, weighted2 = getNclusters(adata_sampled, G2, n_clusters=n_clusters2, seed=seed,
+                                             clustering_algo=clustering_algo, flavor='base', weights=weights2)
+            if clustering_algo == "leiden":
+                clus = np.array(leidenalg.find_partition(graph=G2,
+                                                         partition_type=leidenalg.RBConfigurationVertexPartition,
+                                                         weights=weights2,
+                                                         resolution_parameter=resol2,
+                                                         seed=seed).membership)
+                adata_sampled.obs['leiden'] = pd.Categorical(values=clus.astype('U'),
+                                                             categories=natsorted(map(str, np.unique(clus))),)
+                sc.tl.paga(adata_sampled, groups="leiden")
+            elif clustering_algo == "louvain":
+                clus = np.array(louvain.find_partition(graph=G2,
+                                                       partition_type=louvain.RBConfigurationVertexPartition,
+                                                       weights=weights2,
+                                                       resolution_parameter=resol2, seed=seed).membership)
+                adata_sampled.obs['louvain'] = pd.Categorical(values=clus.astype('U'),
+                                                              categories=natsorted(map(str, np.unique(clus))), )
+                sc.tl.paga(adata_sampled, groups="louvain")
+            all_iter[method_name]['iter'+str(iter)] = adata_sampled.uns["paga"]["connectivities_tree"]
+    print('\t\t\tPAGA stability pipeline:', round((time.time()-start)/60, 2), 'mn')
+    for method_name in all_iter.keys():
+        if method_name == "nothing":
+            all_adata[method_name] = anndata.AnnData(X=all_adata[method_name].X,
+                                                     uns={'Order': all_adata[method_name].uns['Order'],
+                                                          'paga': all_adata[method_name].uns['paga']},
+                                                     obs=all_adata[method_name].obs)
+        else:
+            all_adata[method_name] = anndata.AnnData(X=all_adata[method_name].X[:, :2],
+                                                     uns={'Order': all_adata[method_name].uns['Order'],
+                                                          'paga': all_adata[method_name].uns['paga']},
+                                                     obs=all_adata[method_name].obs)
+        all_adata[method_name].write_h5ad(filename=get_res_path(fname)+'_'+method_name+".h5ad")
+        if method_name not in ["umap", "gauss"]:
+            w = csv.writer(open(get_res_path(fname)+'_'+method_name+"_stab.csv", "w"))
+            for key, val in all_iter[method_name].items():
+                w.writerow([key, val])
+            np.savetxt(get_res_path(fname)+'_'+method_name+"_stab_cell.csv", cell_iter[method_name], delimiter=',', fmt='%d')
+            np.savetxt(get_res_path(fname)+'_'+method_name+"_stab_feat.csv", feat_iter[method_name], delimiter=',', fmt='%d')
 
 
 ##### USAGE ######
@@ -139,8 +229,11 @@ do_pca = True
 weighted = True
 norm_scale = True
 seed = 0
+n_iter = 10
+bootstrap_size = 0.95
 fnames = ['dataset1', 'dataset2', ...]
 # fnames list of datasets
+
 
 # varying params
 metric = ('cosine', 'euclidean')
@@ -161,8 +254,9 @@ for metric, n_comps, do_norm, clustering_algo in params_list:
         # if data is h5ad
         adata = load_h5ad(path_data, fname)
 
-        viz_analysis(
+        ti_analysis(
             adata,
+            true_labels=adata.uns['Order'],
             do_norm=do_norm,
             norm_scale=norm_scale,
             do_log=do_log,
@@ -172,5 +266,7 @@ for metric, n_comps, do_norm, clustering_algo in params_list:
             weighted=weighted, 
             seed=seed,
             n_comps=n_comps,
-            clustering_algo=clustering_algo
+            clustering_algo=clustering_algo,
+            n_iter=n_iter,
+            bootstrap_size=bootstrap_size
         )
