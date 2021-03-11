@@ -1,7 +1,7 @@
 schubness
 ====
 
-This repository contains the data and the scripts used in the manuscript "Hubness reduction improves downstream analyses of single-cell transcriptomic data" in which we study the hubness phenomenon and related observations in single-cell RNA sequencing data
+This repository contains the data and the scripts used in the manuscript "Hubness reduction improves downstream analyses of single-cell transcriptomic data" in which we study the hubness phenomenon and related observations in single-cell RNA sequencing data.
 
 
 Aims
@@ -30,6 +30,6 @@ All scripts used to produced the figures in the manuscript are available in this
 
  Data
 -----------
-We used public datasets and regrouped them in a Zenodo repository here.
+We used public datasets and regrouped them in a Zenodo repository [here](https://zenodo.org/).
 
 
