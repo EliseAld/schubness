@@ -44,12 +44,12 @@ for i in range(n_draws):
 cube_skew = [skhubness.Hubness(k=k, metric='euclidean').fit(cube[i, :, :]).score() for i in range(n_draws)]
 sphere_skew = [skhubness.Hubness(k=k, metric='euclidean').fit(sphere[i, :, :]).score() for i in range(n_draws)]
 skew = np.stack((cube_skew, sphere_skew), axis=1)
-plt.clf()
-box_skew = plt.boxplot(skew, patch_artist=True, labels=["n-Cube", "n-Sphere"])
-for patch, color in zip(box_skew['boxes'], colors):
-    patch.set_facecolor(color)
-plt.ylabel("k-Skewness")
-plt.show()
+# plt.clf()
+# box_skew = plt.boxplot(skew, patch_artist=True, labels=["n-Cube", "n-Sphere"])
+# for patch, color in zip(box_skew['boxes'], colors):
+#     patch.set_facecolor(color)
+# plt.ylabel("k-Skewness")
+# plt.show()
 # print('skewness calculated')
 
 # Make 2D projection

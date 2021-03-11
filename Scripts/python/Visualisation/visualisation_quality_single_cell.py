@@ -14,7 +14,7 @@ import scanpy as sc
 import time
 import warnings
 from benchmark_common_functions import getNclusters, generate_clustering_inputs, recipe_duo, recipe_seurat, load_h5ad, load_rds
-from visualisation_common_functions import QDM, QNP, natural_pca
+from Visualisation.visualisation_common_functions import QDM, QNP, natural_pca
 
 warnings.filterwarnings("ignore")
 

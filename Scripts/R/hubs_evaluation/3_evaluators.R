@@ -38,7 +38,7 @@ evaluator_antihubs <- function(score) { # Counting antihubs
    return(sum(score==0)/length(score)*100)
 }
 
-count_unid_edges_ <- function(knn_graph) {
+count_uniD_edges_ <- function(knn_graph) {
    increment = 0
    for (i in 1:nrow(knn_graph)) {
       for (j in 1:ncol(knn_graph)) {
@@ -52,6 +52,6 @@ count_unid_edges_ <- function(knn_graph) {
 
 evaluator_asymmetry <- function(data, k, n_dim) { # asymmetry
   knn_graph <- knn.covertree::find_knn(t(data[1:n_dim,]),k)$index
-  asym <- count_unid_edges_(knn_graph)
+  asym <- count_uniD_edges_(knn_graph)
   return(asym)
 }

@@ -16,7 +16,7 @@ source("~/3_evaluators.R")
 source("~/5_hubs_QC.R")
 
 ### Functions to perform QC
-entropy
+# Load entropy vector
 
 QC_computation <- function(data, k, score, n_val, thd, entropy, n_dims=50) {
   names(score) <- colnames(data)
