@@ -1,7 +1,5 @@
 schubness
 ====
-====
-====
 
 This repository contains the data and the scripts used in the manuscript "Hubness reduction improves downstream analyses of single-cell transcriptomic data" in which we study the hubness phenomenon and related observations in single-cell RNA sequencing data.
 
